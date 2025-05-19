@@ -1,0 +1,167 @@
+---
+description: Apply these rules when creating the project
+globs:
+alwaysApply: true
+---
+## Project Overview
+
+*   **Type:** Cloud-based web application
+*   **Description:** Permisoria is a cloud-based web application to streamline permit and license management, initially focused on businesses in Puerto Rico.
+*   **Primary Goal:** Reduce administrative burdens, prevent permit lapses, enhance transparency, and improve compliance.
+
+## Project Structure
+
+### Framework-Specific Routing
+
+*   **Directory Rules:**
+
+    *   **Next.js 14 (App Router):** Enforce `app/` directory with nested route folders. Each route folder contains a `page.tsx` (server component by default) and optional `layout.tsx`, `loading.tsx`, or `error.tsx`.
+    *   Example: `app/auth/login/page.tsx` for login, `app/businesses/[id]/page.tsx` for business detail pages.
+    *   API routes under `app/api/[route]/route.ts` using Next.js Route Handlers.
+
+### Core Directories
+
+*   **Versioned Structure:**
+
+    *   `app/`: Next.js 14 App Router with nested routes and layouts.
+    *   `app/api/`: Next.js 14 Route Handlers for backend endpoints.
+    *   `components/`: Reusable React components (use client directive when interactive).
+    *   `lib/`: Utilities, Supabase client, Prisma setup.
+    *   `styles/`: Tailwind CSS globals and configuration.
+    *   `public/`: Static assets (images, icons).
+
+### Key Files
+
+*   **Stack-Versioned Patterns:**
+
+    *   `app/layout.tsx`: Next.js 14 root layout with dark theme and global providers.
+    *   `app/page.tsx`: Next.js 14 root landing page (redirect to dashboard or login).
+    *   `app/dashboard/layout.tsx`: Dashboard layout for authenticated users.
+    *   `app/api/auth/route.ts`: Supabase Auth proxy via Next.js Route Handlers.
+    *   `next.config.js`: Next.js configuration enforcing App Router and React 18.
+    *   `tailwind.config.js`: Tailwind CSS JIT configuration.
+    *   `tsconfig.json`: TypeScript path aliases (`@/components`, `@/lib`).
+
+## Tech Stack Rules
+
+*   **Version Enforcement:**
+
+    *   **next@14:** App Router required. No `pages/` directory. Prefer server components; use `'use client'` at top of client files.
+    *   **react@18:** Functional components and Hooks only; wrap root in `<StrictMode>`.
+    *   **keep-react@1.6.1:** Use provided UI primitives; extend via theming API.
+    *   **tailwindcss@latest:** Utility-first styling; purge unused styles in production.
+    *   **framer-motion@11.11.9:** Use `<motion>` components and `AnimatePresence` for route transitions.
+    *   **phosphor-react@1.4.1:** Import icons individually to enable tree-shaking.
+    *   **recharts@2.13.0:** Memoize chart props; lazy-load heavy charts.
+    *   **react-hook-form@7.53.0:** Use uncontrolled inputs for performance; integrate with Zod for schema validation.
+    *   **zustand@latest:** Create separate stores per domain (auth, subscriptions, notifications).
+    *   **supabase@latest:** Utilize Row Level Security (RLS); enforce policies for RBAC.
+    *   **prisma@latest:** Migrate with `prisma migrate`; generate typed client.
+    *   **stripe@latest:** Implement webhooks in `app/api/stripe/route.ts`; verify signatures.
+    *   **sendgrid@latest:** Use transactional templates; verify sender domains.
+
+## PRD Compliance
+
+*   **Non-Negotiable:**
+
+    *   "File Size Limits: 5MB (Free Tier), 50MB (Business Tier)." : Enforce both client- and server-side validation in upload handlers.
+    *   "Default timeframe of 30 days before expiration is used for 'Expiring Soon' badge. This isn't user-configurable in MVP." : Hardcode 30-day threshold in permit status logic.
+    *   "Performance: Page load < 2s, API responses < 200ms." : Monitor with Vercel Analytics and Supabase query logs; optimize indexes.
+    *   "Dark theme. Mobile-first responsive design. WCAG 2.1 AA accessibility compliance." : Audit with axe and Lighthouse; enforce ARIA attributes.
+
+## App Flow Integration
+
+*   **Stack-Aligned Flow:**
+
+    *   Next.js 14 Auth Flow → `app/auth/login/page.tsx` uses Supabase server actions for sign-in and email verification.
+    *   Business Owner CRUD → `app/owners/[id]/page.tsx` and `app/owners/create/page.tsx` with React Hook Form and Supabase Storage upload.
+    *   Business Module → `app/businesses/[businessId]/page.tsx` with Google Maps dark theme embed and document upload modals.
+    *   Permit Tracking → embedded modals in `app/businesses/[businessId]/page.tsx`; status badges computed server-side.
+    *   Subscription & Billing → `app/billing/checkout/page.tsx` and `app/api/stripe/route.ts`; Stripe webhooks update Supabase subscriptions.
+    *   Notifications → real-time stream in `components/NotificationsPanel` via Supabase Realtime and email via SendGrid API.
+
+## Best Practices
+
+*   Next.js 14 (App Router)
+
+    *   Prefer React Server Components for data fetching.
+    *   Use Route Handlers in `app/api` for backend logic.
+    *   Implement layouts and templates for consistent UI.
+
+*   React 18
+
+    *   Use function components and Hooks.
+    *   Wrap root in `<StrictMode>` and `<ErrorBoundary>`.
+
+*   keep-react (v1.6.1)
+
+    *   Leverage base components and theme overrides.
+    *   Avoid custom CSS when a primitive covers use case.
+
+*   Tailwind CSS
+
+    *   Use utility classes; configure `safelist` for dynamic classes.
+    *   Extract repeated patterns into `@apply` directives.
+
+*   framer-motion
+
+    *   Use `AnimatePresence` for unmount animations.
+    *   Optimize motion variants to avoid layout thrashing.
+
+*   phosphor-react
+
+    *   Import icons on demand: `import { Icon } from 'phosphor-react';`
+
+*   recharts
+
+    *   Wrap charts in `<ResponsiveContainer>`.
+    *   Memoize data transforms.
+
+*   react-hook-form
+
+    *   Use controller for complex inputs.
+    *   Integrate with Zod for validation.
+
+*   Zustand
+
+    *   Create separate stores per feature domain.
+    *   Persist critical state with `middleware(persist)`.
+
+*   Supabase
+
+    *   Define strong RLS policies per table.
+    *   Use edge functions for heavy backend tasks if needed.
+
+*   Prisma
+
+    *   Keep schema in sync with migrations.
+    *   Use `$transaction` for multi-step DB updates.
+
+*   Stripe
+
+    *   Validate webhook signatures.
+    *   Store only necessary payment metadata.
+
+*   SendGrid
+
+    *   Use dynamic templates.
+    *   Handle bounces and unsubscribes.
+
+## Rules
+
+*   Derive folder/file patterns directly from `techStackDoc` versions.
+*   If Next.js 14 App Router: Enforce `app/` directory with nested route folders.
+*   If Pages Router: Use `pages/*.tsx` flat structure.
+*   Mirror this logic for React Router, SvelteKit, etc.
+*   Never mix version patterns (e.g., no `pages/` in App Router projects).
+
+## Rules Metrics
+
+Before starting the project development, create a metrics file in the root of the project called `cursor_metrics.md`.
+
+### Instructions:
+
+*   Each time a cursor rule is used as context, update `cursor_metrics.md`.
+*   Use the following format for `cursor_metrics.md`:
+
+`# Rules Metrics ## Usage The number of times rules is used as context * rule-name.mdc: 5 * another-rule.mdc: 2`
