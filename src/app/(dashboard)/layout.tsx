@@ -8,19 +8,23 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background text-text-primary">
       {/* This is a placeholder for the navbar component that will be created later */}
-      <header className="bg-surface p-4 border-b border-white/10">
-        <h1 className="text-lg font-semibold">Permisoria</h1>
-        {/* Navbar will go here */}
+      <header className="bg-surface p-4 border-b border-white/10 shadow-md">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-xl font-semibold text-primary">Permisoria</h1>
+          {/* Navbar will go here */}
+        </div>
       </header>
       
-      <div className="flex-grow">
+      <main className="flex-grow container mx-auto py-6 px-4">
         {children}
-      </div>
+      </main>
       
       <footer className="bg-surface p-4 text-center text-text-secondary text-sm border-t border-white/10">
-        &copy; {new Date().getFullYear()} Permisoria. All rights reserved.
+        <div className="container mx-auto">
+          &copy; {new Date().getFullYear()} Permisoria. All rights reserved.
+        </div>
       </footer>
     </div>
   );

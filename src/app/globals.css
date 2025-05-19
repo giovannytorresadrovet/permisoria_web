@@ -4,17 +4,21 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* Dark mode styles */
-body {
-  @apply bg-background text-text-primary;
+@layer base {
+  /* Dark mode styles */
+  body {
+    @apply bg-background text-text-primary;
+  }
 }
 
-/* Glassmorphism card styling */
-.card-glass {
-  @apply bg-surface/60 backdrop-blur-sm border border-white/10 rounded-md shadow-lg;
-}
+@layer components {
+  /* Glassmorphism card styling */
+  .card-glass {
+    @apply bg-surface/60 backdrop-blur-sm border border-white/10 rounded-md shadow-lg;
+  }
 
-/* Focus states for accessibility */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
+  /* Focus states for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
+  }
 } 
