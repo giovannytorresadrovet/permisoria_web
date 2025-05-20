@@ -10,7 +10,11 @@ const nextConfig = {
   // Configure webpack to handle CSS properly
   webpack: (config) => {
     return config;
-  }
+  },
+  // Ensure static assets are properly served
+  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '',
+  // Increase static generation timeout
+  staticPageGenerationTimeout: 180,
 };
 
 module.exports = nextConfig; 

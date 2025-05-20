@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Button } from 'keep-react';
 
 type DiagnosticsResult = {
   environment: {
@@ -191,133 +192,53 @@ export default function DiagnosticsPage() {
     diagnostics.summary.toLowerCase().startsWith('partial') ? 'partial' : 'failure'];
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Supabase Connection Diagnostics</h1>
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <h1 className="text-2xl font-bold mb-6">Permisoria Diagnostics</h1>
       
-      <div className={`text-xl font-semibold mb-6 ${statusColor}`}>
-        {diagnostics.summary}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-gray-800 rounded p-4">
-          <h2 className="text-xl font-bold mb-3">Environment</h2>
-          <dl>
-            {Object.entries(diagnostics.environment).map(([key, value]) => (
-              <div key={key} className="grid grid-cols-2 mb-2">
-                <dt className="font-medium">{key}:</dt>
-                <dd className={value === 'Missing' ? 'text-red-500' : 'text-green-500'}>{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Link href="/diagnostics/auth-flow" className="block">          <div className="p-6 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">            <h2 className="text-xl font-semibold mb-2">Authentication Test</h2>            <p className="text-gray-300 mb-4">              Run end-to-end tests for authentication flow including sign-up, login, password reset, and session management.            </p>            <Button               size="sm"               type="button"               variant="default"            >              Run Authentication Tests            </Button>          </div>        </Link>
         
-        <div className="bg-gray-800 rounded p-4">
-          <h2 className="text-xl font-bold mb-3">Connection Status</h2>
-          <dl>
-            <div className="grid grid-cols-2 mb-2">
-              <dt className="font-medium">Auth Client:</dt>
-              <dd className={diagnostics.authClientStatus === 'Connected' ? 'text-green-500' : 'text-red-500'}>
-                {diagnostics.authClientStatus}
-              </dd>
-            </div>
-            <div className="grid grid-cols-2 mb-2">
-              <dt className="font-medium">Service Role Client:</dt>
-              <dd className={diagnostics.serviceClientStatus === 'Connected' ? 'text-green-500' : 'text-red-500'}>
-                {diagnostics.serviceClientStatus}
-              </dd>
-            </div>
-          </dl>
-          
-          {/* Add button to test service role with advanced checks */}
-          <div className="mt-3">
-            <button
-              onClick={testServiceRole}
-              disabled={serviceRoleLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1 px-3 rounded"
+        <Link href="/api/supabase-diagnostics" target="_blank" className="block">
+          <div className="p-6 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+            <h2 className="text-xl font-semibold mb-2">Supabase Diagnostics</h2>
+            <p className="text-gray-300 mb-4">
+              Check Supabase connection status, environment variables, and service roles.
+            </p>
+            <Button 
+              size="sm" 
+              type="button" 
+              variant="default"
             >
-              {serviceRoleLoading ? 'Testing...' : 'Run Advanced Service Role Tests'}
-            </button>
+              Run API Diagnostics
+            </Button>
           </div>
-        </div>
+        </Link>
       </div>
       
-      {/* Display service role test results if available */}
-      {serviceRoleTest && (
-        <div className="bg-gray-800 rounded p-4 mb-8">
-          <h2 className="text-xl font-bold mb-3">Advanced Service Role Tests</h2>
-          <div className={`mb-3 ${serviceRoleTest.status === 'success' ? 'text-green-500' : 'text-red-500'}`}>
-            {serviceRoleTest.message}
+      <div className="mt-8 p-4 bg-gray-800 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Environment Check</h2>
+        <p className="text-gray-300 mb-4">
+          Verify that your environment variables are properly configured for authentication.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-3 bg-gray-700 rounded-md">
+            <p className="font-medium mb-1">Required Variables:</p>
+            <ul className="list-disc list-inside text-sm text-gray-300">
+              <li>NEXT_PUBLIC_SUPABASE_URL</li>
+              <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+              <li>SUPABASE_SERVICE_ROLE_KEY (for admin functions)</li>
+            </ul>
           </div>
-          
-          {serviceRoleTest.results && (
-            <div className="mt-3">
-              <h3 className="text-lg font-semibold mb-2">Test Results:</h3>
-              <div className="grid grid-cols-1 gap-2">
-                {serviceRoleTest.results.map((result, index) => (
-                  <div key={index} className="border border-gray-700 p-2 rounded">
-                    <div className="grid grid-cols-2">
-                      <span className="font-medium">{result.test}:</span>
-                      <span className={result.status === 'success' ? 'text-green-500' : 'text-red-500'}>
-                        {result.status}
-                      </span>
-                    </div>
-                    {result.error && (
-                      <div className="text-red-400 text-sm mt-1">
-                        {result.error}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {serviceRoleTest.error && (
-            <div className="text-red-500 mt-2">
-              Error: {serviceRoleTest.error}
-            </div>
-          )}
+          <div className="p-3 bg-gray-700 rounded-md">
+            <p className="font-medium mb-1">Expected Format:</p>
+            <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+{`# .env.local example
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key`}
+            </pre>
+          </div>
         </div>
-      )}
-      
-      {diagnostics.errors.length > 0 && (
-        <div className="bg-gray-800 rounded p-4 mb-8">
-          <h2 className="text-xl font-bold mb-3 text-red-500">Errors</h2>
-          <ul className="space-y-2">
-            {diagnostics.errors.map((err, index) => (
-              <li key={index} className="border-l-4 border-red-500 pl-3 py-1">
-                <span className="font-semibold">{err.source}:</span> {err.message}
-              </li>
-            ))}
-          </ul>
-          
-          {diagnostics.errors.some(e => e.message.includes("Auth session missing")) && (
-            <div className="mt-3 p-3 bg-gray-700 rounded text-sm">
-              <p className="font-semibold text-yellow-400">About "Auth session missing" errors:</p>
-              <p className="mt-1">
-                This error often occurs when using service role credentials with auth methods. 
-                The service role doesn't need authentication and should be used for database operations
-                rather than authentication operations.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      <div className="mt-8 text-center">
-        <button 
-          onClick={retryFetch} 
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
-        >
-          Rerun Diagnostics
-        </button>
-        
-        <Link 
-          href="/" 
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Back to Home
-        </Link>
       </div>
     </div>
   );

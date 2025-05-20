@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createSupabaseClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
 import { AuthError } from '@supabase/supabase-js';
 
@@ -10,7 +10,7 @@ export const useAuth = () => {
   const { setUserSession, setLoading, setError, clearError, clearUser } = useAuthStore();
 
   // Create a Supabase client for the browser
-  const supabase = createClient();
+  const supabase = createSupabaseClient();
 
   // Set up the auth state listener - runs once on component mount
   useEffect(() => {
@@ -18,20 +18,29 @@ export const useAuth = () => {
     const checkAuthState = async () => {
       try {
         setLoading(true);
+        console.log('🔐 [Auth] Checking current auth state...');
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error('🔐 [Auth] Error getting session:', error);
           throw error;
         }
 
         if (data?.session) {
+          console.log('🔐 [Auth] Session found:', { 
+            user_id: data.session.user.id,
+            email: data.session.user.email,
+            role: data.session.user.user_metadata?.role,
+            expires_at: data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : 'unknown',
+          });
           const { data: userData } = await supabase.auth.getUser();
           setUserSession(userData.user, data.session);
         } else {
+          console.log('🔐 [Auth] No session found, user is not authenticated');
           setUserSession(null, null);
         }
       } catch (err) {
-        console.error('Error checking auth state:', err);
+        console.error('🔐 [Auth] Error checking auth state:', err);
         setError(err instanceof Error ? err : new Error('Unknown error occurred'));
       } finally {
         setLoading(false);
@@ -44,18 +53,35 @@ export const useAuth = () => {
     // Set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log(`🔐 [Auth] Auth state changed: ${event}`, { 
+          session: newSession ? 'exists' : 'none',
+          user_id: newSession?.user.id,
+          email: newSession?.user.email,
+        });
+        
         setLoading(true);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (newSession) {
             const { data } = await supabase.auth.getUser();
+            console.log('🔐 [Auth] User signed in:', { 
+              id: data.user?.id,
+              email: data.user?.email,
+              role: data.user?.user_metadata?.role 
+            });
             setUserSession(data.user, newSession);
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log('🔐 [Auth] User signed out');
           setUserSession(null, null);
         } else if (event === 'USER_UPDATED') {
           if (newSession) {
             const { data } = await supabase.auth.getUser();
+            console.log('🔐 [Auth] User updated:', { 
+              id: data.user?.id, 
+              email: data.user?.email,
+              role: data.user?.user_metadata?.role
+            });
             setUserSession(data.user, newSession);
           }
         }
@@ -66,6 +92,7 @@ export const useAuth = () => {
 
     // Cleanup subscription when component unmounts
     return () => {
+      console.log('🔐 [Auth] Cleaning up auth subscription');
       subscription.unsubscribe();
     };
   }, [setUserSession, setLoading, setError]);
@@ -80,6 +107,7 @@ export const useAuth = () => {
   ) => {
     clearError();
     setLoading(true);
+    console.log('🔐 [Auth] Signing up user:', { email, options });
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -87,7 +115,17 @@ export const useAuth = () => {
         options: options || {},
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔐 [Auth] Sign up error:', error);
+        throw error;
+      }
+      
+      console.log('🔐 [Auth] Sign up successful:', { 
+        id: data.user?.id,
+        email: data.user?.email,
+        confirmation_sent: Boolean(data.user?.identities?.length),
+        role: data.user?.user_metadata?.role
+      });
       
       return { data, error: null };
     } catch (err) {
@@ -105,13 +143,23 @@ export const useAuth = () => {
   const signInWithPassword = async (email: string, password: string) => {
     clearError();
     setLoading(true);
+    console.log('🔐 [Auth] Signing in user:', { email });
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔐 [Auth] Sign in error:', error);
+        throw error;
+      }
+      
+      console.log('🔐 [Auth] Sign in successful:', { 
+        id: data.user?.id,
+        email: data.user?.email,
+        role: data.user?.user_metadata?.role
+      });
       
       return { data, error: null };
     } catch (err) {
@@ -129,11 +177,16 @@ export const useAuth = () => {
   const signOut = async () => {
     clearError();
     setLoading(true);
+    console.log('🔐 [Auth] Signing out user');
     try {
       const { error } = await supabase.auth.signOut();
       
-      if (error) throw error;
+      if (error) {
+        console.error('🔐 [Auth] Sign out error:', error);
+        throw error;
+      }
       
+      console.log('🔐 [Auth] Sign out successful');
       clearUser();
       return { error: null };
     } catch (err) {
@@ -151,13 +204,18 @@ export const useAuth = () => {
   const resetPasswordForEmail = async (email: string) => {
     clearError();
     setLoading(true);
+    console.log('🔐 [Auth] Requesting password reset for:', { email });
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔐 [Auth] Password reset request error:', error);
+        throw error;
+      }
       
+      console.log('🔐 [Auth] Password reset request successful');
       return { data, error: null };
     } catch (err) {
       const authError = err as AuthError;

@@ -1,21 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeSlash, LockKey, Envelope, ArrowLeft, CheckCircle, Info, Buildings } from 'phosphor-react';
+import { motion } from 'framer-motion';
+import { 
+  Eye, 
+  EyeSlash, 
+  LockKey, 
+  Envelope, 
+  Buildings, 
+  User, 
+  CheckCircle, 
+  Warning, 
+  ArrowLeft,
+  Info
+} from 'phosphor-react';
+import { TextInput } from 'keep-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/store/authStore';
 
-// Import our auth components
+// Import our new components
 import AuthFormLayout from '@/components/auth/AuthFormLayout';
 import GlassCard from '@/components/auth/GlassCard';
 import ErrorMessage from '@/components/auth/ErrorMessage';
 import AuthButton from '@/components/auth/AuthButton';
-import { Input } from '@/components/common/Input';
 
 // Define validation schema with Zod
 const registerSchema = z.object({
@@ -40,7 +52,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: Form, 2: Success
   const supabase = createClientComponentClient();
-  const setUserSession = useAuthStore((state) => state.setUserSession);
+  const setUser = useAuthStore((state) => state.setUser);
   
   // Set up react-hook-form with zod validation
   const {
@@ -98,7 +110,33 @@ export default function RegisterPage() {
   const handleGotoDashboard = () => {
     router.push('/app/dashboard');
   };
-
+  
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 24 
+      }
+    }
+  };
+  
+  const successVariants = {
+    hidden: { scale: 0.9, opacity: 0 },
+    visible: { 
+      scale: 1, 
+      opacity: 1,
+      transition: { 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 24 
+      }
+    }
+  };
+  
   return (
     <AuthFormLayout 
       title={step === 1 ? "Create a Permit Manager Account" : "Registration Successful!"}
@@ -108,7 +146,10 @@ export default function RegisterPage() {
       {step === 1 ? (
         <>
           {/* Business Owner notice */}
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            variants={itemVariants}
+          >
             <GlassCard variant="info" animate>
               <div className="flex items-start">
                 <Info size={24} className="mr-3 text-blue-400 flex-shrink-0 mt-0.5" />
@@ -121,7 +162,7 @@ export default function RegisterPage() {
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </motion.div>
           
           {/* Form error message */}
           {error && <ErrorMessage message={error} />}
@@ -129,68 +170,125 @@ export default function RegisterPage() {
           {/* Registration form */}
           <GlassCard animate>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="space-y-5">
+              <motion.div className="space-y-5" variants={itemVariants}>
                 {/* Name fields - side by side on larger screens */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* First Name field */}
-                  <Input
-                    label="First Name"
-                    id="firstName"
-                    placeholder="Enter your first name"
-                    registration={register('firstName')}
-                    icon={<Buildings size={20} className="text-gray-400" />}
-                    error={errors.firstName?.message}
-                  />
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-1">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <TextInput
+                      id="firstName"
+                      placeholder="Enter your first name"
+                      {...register('firstName')}
+                      sizing="lg"
+                      className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-3 focus:ring-blue-600/40 focus:border-blue-500 transition-all duration-200"
+                      icon={<User size={20} className="text-gray-400" />}
+                      error={!!errors.firstName}
+                      helperText={errors.firstName?.message}
+                    />
+                  </div>
                   
                   {/* Last Name field */}
-                  <Input
-                    label="Last Name"
-                    id="lastName"
-                    placeholder="Enter your last name"
-                    registration={register('lastName')}
-                    icon={<Buildings size={20} className="text-gray-400" />}
-                    error={errors.lastName?.message}
-                  />
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-1">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <TextInput
+                      id="lastName"
+                      placeholder="Enter your last name"
+                      {...register('lastName')}
+                      sizing="lg"
+                      className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-3 focus:ring-blue-600/40 focus:border-blue-500 transition-all duration-200"
+                      icon={<User size={20} className="text-gray-400" />}
+                      error={!!errors.lastName}
+                      helperText={errors.lastName?.message}
+                    />
+                  </div>
                 </div>
                 
                 {/* Email field */}
-                <Input
-                  label="Email Address"
-                  id="email"
-                  placeholder="Enter your email"
-                  registration={register('email')}
-                  type="email"
-                  icon={<Envelope size={20} className="text-gray-400" />}
-                  error={errors.email?.message}
-                />
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <TextInput
+                    id="email"
+                    placeholder="Enter your email"
+                    {...register('email')}
+                    type="email"
+                    sizing="lg"
+                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-3 focus:ring-blue-600/40 focus:border-blue-500 transition-all duration-200"
+                    icon={<Envelope size={20} className="text-gray-400" />}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                </div>
                 
                 {/* Password field */}
-                <div className="mb-4">
+                <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                     Password <span className="text-red-500">*</span>
                   </label>
-                  <Input
+                  <TextInput
                     id="password"
                     placeholder="Create a password"
-                    registration={register('password')}
+                    {...register('password')}
                     type={showPassword ? "text" : "password"}
+                    sizing="lg"
+                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-3 focus:ring-blue-600/40 focus:border-blue-500 transition-all duration-200"
                     icon={<LockKey size={20} className="text-gray-400" />}
-                    error={errors.password?.message}
+                    iconPosition="left"
+                    addonRight={
+                      <button 
+                        type="button" 
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-gray-400 hover:text-gray-300 focus:outline-none"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeSlash size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    }
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
                   />
                 </div>
                 
                 {/* Confirm Password field */}
-                <div className="mb-4">
+                <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
-                  <Input
+                  <TextInput
                     id="confirmPassword"
                     placeholder="Confirm your password"
-                    registration={register('confirmPassword')}
+                    {...register('confirmPassword')}
                     type={showConfirmPassword ? "text" : "password"}
+                    sizing="lg"
+                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-3 focus:ring-blue-600/40 focus:border-blue-500 transition-all duration-200"
                     icon={<LockKey size={20} className="text-gray-400" />}
-                    error={errors.confirmPassword?.message}
+                    iconPosition="left"
+                    addonRight={
+                      <button 
+                        type="button" 
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="text-gray-400 hover:text-gray-300 focus:outline-none"
+                        aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeSlash size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    }
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
                   />
                   
                   {/* Password match indicator */}
@@ -240,20 +338,28 @@ export default function RegisterPage() {
                 >
                   Create Permit Manager Account
                 </AuthButton>
-              </div>
+              </motion.div>
             </form>
           </GlassCard>
           
           {/* Sign in link */}
-          <div className="mt-6 text-center text-gray-400 text-sm">
+          <motion.div 
+            className="mt-6 text-center text-gray-400 text-sm"
+            variants={itemVariants}
+          >
             Already have an account?{' '}
             <Link href="/auth/login" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
               Sign in
             </Link>
-          </div>
+          </motion.div>
         </>
       ) : (
-        <div className="text-center">
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={successVariants}
+          className="text-center"
+        >
           {/* Success message */}
           <GlassCard variant="success" className="text-center" animate>
             <div className="mb-6 mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 text-green-500">
@@ -288,8 +394,8 @@ export default function RegisterPage() {
               </AuthButton>
             </div>
           </GlassCard>
-        </div>
+        </motion.div>
       )}
     </AuthFormLayout>
   );
-} 
+}

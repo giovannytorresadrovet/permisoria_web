@@ -3,18 +3,23 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Envelope, ArrowLeft, EnvelopeSimple } from 'phosphor-react';
+import { motion } from 'framer-motion';
+import { 
+  Envelope, 
+  ArrowLeft, 
+  EnvelopeSimple
+} from 'phosphor-react';
+import { TextInput } from 'keep-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-// Import our auth components
+// Import our new components
 import AuthFormLayout from '@/components/auth/AuthFormLayout';
 import GlassCard from '@/components/auth/GlassCard';
 import ErrorMessage from '@/components/auth/ErrorMessage';
 import AuthButton from '@/components/auth/AuthButton';
-import { Input } from '@/components/common/Input';
 
 // Define validation schema with Zod
 const forgotPasswordSchema = z.object({
@@ -71,6 +76,32 @@ export default function ForgotPasswordPage() {
   const handleBackToLogin = () => {
     router.push('/auth/login');
   };
+  
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 24 
+      }
+    }
+  };
+  
+  const successVariants = {
+    hidden: { scale: 0.9, opacity: 0 },
+    visible: { 
+      scale: 1, 
+      opacity: 1,
+      transition: { 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 24 
+      }
+    }
+  };
 
   return (
     <AuthFormLayout 
@@ -80,7 +111,7 @@ export default function ForgotPasswordPage() {
       {step === 1 ? (
         <>
           {/* Back to login */}
-          <div className="mb-6">
+          <motion.div className="mb-6" variants={itemVariants}>
             <AuthButton
               onClick={handleBackToLogin}
               variant="outline"
@@ -91,7 +122,7 @@ export default function ForgotPasswordPage() {
             >
               Back to Sign In
             </AuthButton>
-          </div>
+          </motion.div>
           
           {/* Error message */}
           {error && <ErrorMessage message={error} />}
@@ -99,17 +130,24 @@ export default function ForgotPasswordPage() {
           {/* Password reset form */}
           <GlassCard animate>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="space-y-5">
+              <motion.div className="space-y-5" variants={itemVariants}>
                 {/* Email field */}
-                <Input
-                  label="Email Address"
-                  id="email"
-                  placeholder="Enter your email"
-                  registration={register('email')}
-                  type="email"
-                  icon={<Envelope size={20} className="text-gray-400" />}
-                  error={errors.email?.message}
-                />
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <TextInput
+                    id="email"
+                    placeholder="Enter your email"
+                    {...register('email')}
+                    type="email"
+                    sizing="lg"
+                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-3 focus:ring-blue-600/40 focus:border-blue-500 transition-all duration-200"
+                    icon={<Envelope size={20} className="text-gray-400" />}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                </div>
                 
                 {/* Submit button */}
                 <AuthButton
@@ -120,20 +158,28 @@ export default function ForgotPasswordPage() {
                 >
                   Send Reset Instructions
                 </AuthButton>
-              </div>
+              </motion.div>
             </form>
           </GlassCard>
           
           {/* Help text */}
-          <div className="mt-6 text-center text-gray-400 text-sm">
+          <motion.div 
+            className="mt-6 text-center text-gray-400 text-sm"
+            variants={itemVariants}
+          >
             Remember your password?{' '}
             <Link href="/auth/login" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
               Sign in
             </Link>
-          </div>
+          </motion.div>
         </>
       ) : (
-        <div className="text-center">
+        <motion.div 
+          className="text-center"
+          initial="hidden"
+          animate="visible"
+          variants={successVariants}
+        >
           {/* Success message */}
           <GlassCard variant="info" animate>
             <div className="mb-6 mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
@@ -167,8 +213,8 @@ export default function ForgotPasswordPage() {
               </AuthButton>
             </div>
           </GlassCard>
-        </div>
+        </motion.div>
       )}
     </AuthFormLayout>
   );
-} 
+}
