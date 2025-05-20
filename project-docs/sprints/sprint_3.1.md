@@ -7,6 +7,7 @@
 * `app_flow_document.md` (Business Owner Management Flow, UI descriptions)
 * `frontend_guidelines_document.md` (UI libraries, styling, components)
 * `business_owner_module.md` (for field references, though focusing on MVP from PRD/App Flow)
+* `AddOwnerModal.md` (Detailed specification for the Add Owner Modal)
 * APIs from Sprint 3.A (e.g., `/api/business-owners`, `/api/business-owners/[id]/documents`)
 * Common UI Components (Button, Input from Sprint 2.0)
 
@@ -40,7 +41,7 @@
 * **States:** Implement loading state (e.g., skeleton loader for table/cards) and empty state (message like "No business owners found. Add one to get started.").
 * **Error Handling:** Display an error message if the API call fails.
 * **AI Action:** Implement data fetching logic. Implement the Table/Card display using `keep-react` components. Implement loading, empty, and error states.
-* *(Ref: app_flow_document.md - "paginated list page that shows each owner’s name, email, phone, location, status badges, and a menu for actions.")*
+* *(Ref: app_flow_document.md - "paginated list page that shows each owner's name, email, phone, location, status badges, and a menu for actions.")*
 
 ### Subtask 1.3: Implement "Add Business Owner" Modal Trigger
 * **Status:** [Pending]
@@ -60,28 +61,61 @@
 * **Status:** [Pending]
 * **Progress:** 0%
 
-### Subtask 2.1: Create Add Business Owner Modal Component
+### Subtask 2.1: Create Location Data Structure and Files
 * **Status:** [Pending]
 * **Progress:** 0%
-* **File Path:** (e.g., `./src/components/features/business-owners/AddOwnerModal.tsx`)
-* **UI:** Use `keep-react` `Modal` component.
-    * Modal Title (e.g., "Add New Business Owner").
-    * Form fields (using common `Input` components from Sprint 2.0): First Name, Last Name, Email, Phone. (As per simplified MVP flow in `app_flow_document.md`).
-    * Submit ("Save Owner" or "Add Owner") and Cancel buttons.
-* **AI Action:** Scaffold the modal component with form elements.
+* **Files to Create:**
+  * `./src/types/location.ts` - Create interface definitions for location data
+  * `./src/data/countries.ts` - Implement country data (US, Puerto Rico) with utility functions
+  * `./src/data/us-states.ts` - Implement US states data with utility functions
+  * `./src/data/pr-municipalities.ts` - Implement Puerto Rico municipalities data with utility functions
+  * `./src/data/identity-types.ts` - Implement identity document types data
+  * `./src/services/locationService.ts` - Create service functions for location data management
+* **Implementation Details:**
+  * Create reusable location data structures for consistent use across the application
+  * Implement utility functions for filtering locations based on country selection
+  * Add type safety with TypeScript interfaces
+* **AI Action:** Create these files with appropriate data structures and utility functions.
+* *(Ref: AddOwnerModal.md - "Identification Information" section and "Technical Considerations")*
 
-### Subtask 2.2: Form Handling and Submission
+### Subtask 2.2: Create Add Business Owner Modal Component
 * **Status:** [Pending]
 * **Progress:** 0%
-* **Action:** Use `react-hook-form` for form state management and validation.
-* **Validation:** Required fields (Name, Email), valid email format, valid phone format (basic).
-* **Submission Logic:**
-    * On submit, call the `POST /api/business-owners` endpoint (from Sprint 3.A) with the form data.
-    * Handle `isLoading` state for the submit button.
-    * On success: Close the modal, refresh the Business Owner list on the main page (e.g., by re-fetching or updating local state), show a success toast/notification. `app_flow_document.md` mentions transitioning to owner's detail page after creation - this can be implemented here or as an option.
-    * On error: Display API error messages within the modal or as a toast.
-* **AI Action:** Implement form handling, validation, API call, success/error handling, and list refresh logic.
-* *(Ref: app_flow_document.md - "opens a modal dialog with essential fields for first name, last name, email, and phone.")*
+* **File Path:** `./src/components/features/business-owners/AddOwnerModal.tsx`
+* **UI Implementation:**
+  * Create a modal with three sections: Personal Information, Contact Information, and Identification Information
+  * Form fields matching the expanded requirements in `AddOwnerModal.md`:
+    * Personal: First Name, Paternal Last Name, Maternal Last Name, Date of Birth
+    * Contact: Phone Number, Email Address
+    * Identification: Type of Identity Document, ID Number, ID Issuing Country, ID Issuing State/Municipality
+  * Add section headers with appropriate iconography
+  * Implement Submit ("Add Business Owner") and Cancel buttons
+  * Create a success state with completion message and next-step options
+* **AI Action:** Implement the modal component with the expanded field set from the specification.
+* *(Ref: AddOwnerModal.md - Detailed requirements for an enhanced owner creation modal)*
+
+### Subtask 2.3: Form Handling and Submission
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Action:** Implement:
+  * Form state and validation with `react-hook-form` and `zod` schema
+  * Dynamic dependent dropdowns for country and state/municipality
+  * Date of Birth picker with age validation (≥ 18)
+  * Field validation:
+    * Names: 2-50 characters
+    * Email: Valid format
+    * Phone: E.164 or local format via regex
+    * Required field validation
+  * API integration:
+    * Transform form data to match API expectations (map `paternalLastName` to `lastName`)
+    * Format date properly for backend
+    * Handle loading states during submission
+    * Special handling for email uniqueness conflicts (409 status)
+  * Success and error states:
+    * Success view with completion message and navigation options
+    * Error display for API failures
+* **AI Action:** Implement comprehensive form validation, API integration, and state management.
+* *(Ref: AddOwnerModal.md - "Submission Logic" section)*
 
 ## Task 3: Business Owner Detail Page UI Structure
 * **Status:** [Pending]
@@ -106,7 +140,7 @@
 ### Subtask 3.2: Implement "Overview" Tab
 * **Status:** [Pending]
 * **Progress:** 0%
-* **Tab Content:** Display detailed profile information: Full Name, Email, Phone, Tax ID (masked if implemented), Full Address.
+* **Tab Content:** Display detailed profile information: Full Name (First Name, Paternal Last Name, Maternal Last Name), Email, Phone, Date of Birth, Tax ID (masked if implemented), Full Address, ID information.
 * **Editable Fields (Inline or Edit Mode):**
     * Allow editing of these fields. When "Edit" is clicked (or fields are directly editable):
     * Use `react-hook-form` to manage the edit form state.

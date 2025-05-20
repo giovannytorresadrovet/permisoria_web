@@ -1,305 +1,322 @@
-// /app/business-owners/page.tsx
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useMediaQuery } from "react-responsive";
-import DesktopBusinessOwnerList from "@/components/desktop/owners/BusinessOwnerList";
-import MobileBusinessOwnerList from "@/components/mobile/owners/BusinessOwnerList";
-import AddBusinessOwnerModal from "@/components/shared/owners/AddBusinessOwnerModal";
-import { Spinner } from "keep-react";
+import { useState, useEffect } from 'react';
+import { Table, Card, Avatar, Badge, Button, Pagination } from 'keep-react';
+import { MagnifyingGlass, Plus, DotsThreeOutline } from 'phosphor-react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import AddOwnerModal from '@/components/features/business-owners/AddOwnerModal';
+import LoadingSkeleton from '@/components/features/business-owners/LoadingSkeleton';
+import EmptyState from '@/components/features/business-owners/EmptyState';
+import ErrorState from '@/components/common/ErrorState';
+import { cn } from '@/lib/utils';
 
-// Shared types for business owners
-export type BusinessOwnerStatus = "ACTIVE" | "INACTIVE";
-export type VerificationStatus = "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+// Badge variants for different statuses
+const statusVariants = {
+  VERIFIED: 'success',
+  UNVERIFIED: 'gray',
+  PENDING_VERIFICATION: 'warning',
+  REJECTED: 'error'
+};
 
-export interface BusinessOwner {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-  city: string | null;
-  status: BusinessOwnerStatus;
-  verificationStatus: VerificationStatus;
-  businessesCount: number;
-  activePermitsCount: number;
-  expiringPermitsCount: number;
-  assignedManagerId: string | null;
-  assignedManagerName: string | null;
-  createdAt: string;
-}
-
-export interface FilterOptions {
-  status: BusinessOwnerStatus | null;
-  verificationStatus: VerificationStatus | null;
-  municipality: string | null;
-  assignedManager: string | null;
-}
-
-const BusinessOwnersPage = () => {
-  const isDesktop = useMediaQuery({ minWidth: 1024 });
-  const [loading, setLoading] = useState(true);
-  const [showAddOwnerModal, setShowAddOwnerModal] = useState(false);
-  const [businessOwners, setBusinessOwners] = useState<BusinessOwner[]>([]);
-  const [filteredOwners, setFilteredOwners] = useState<BusinessOwner[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    status: null,
-    verificationStatus: null,
-    municipality: null,
-    assignedManager: null,
-  });
-  const [selectedOwners, setSelectedOwners] = useState<string[]>([]);
+export default function BusinessOwnersPage() {
+  const router = useRouter();
+  const [owners, setOwners] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [sortField, setSortField] = useState<string>("lastName");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Fetch business owners (mock data for now)
+  // Check viewport width on mount and window resize
   useEffect(() => {
-    const fetchBusinessOwners = async () => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Fetch business owners data
+  useEffect(() => {
+    const fetchOwners = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        // This would be an API call in a real implementation
-        // const response = await fetch("/api/business-owners");
-        // const data = await response.json();
+        // API call to fetch owners with pagination
+        const response = await fetch(`/api/business-owners?page=${currentPage}&search=${searchQuery}`);
         
-        // Mock data for development
-        const mockData: BusinessOwner[] = Array.from({ length: 25 }, (_, i) => ({
-          id: `bo-${i + 1}`,
-          firstName: ["James", "Maria", "John", "Sarah", "Robert", "Linda", "Michael", "Emma"][i % 8],
-          lastName: ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis"][i % 8],
-          email: `owner${i + 1}@example.com`,
-          phone: i % 3 === 0 ? null : `+1 (555) ${100 + i}-${1000 + i}`,
-          city: i % 4 === 0 ? null : ["San Juan", "Ponce", "Bayamón", "Carolina", "Mayagüez"][i % 5],
-          status: i % 5 === 0 ? "INACTIVE" : "ACTIVE",
-          verificationStatus: ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"][i % 4] as VerificationStatus,
-          businessesCount: i % 7,
-          activePermitsCount: i % 10,
-          expiringPermitsCount: i % 3,
-          assignedManagerId: i % 4 === 0 ? `pm-${i % 3 + 1}` : null,
-          assignedManagerName: i % 4 === 0 ? ["Alex Rodriguez", "Sofia Mendez", "Carlos Vega"][i % 3] : null,
-          createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-        }));
-        
-        setBusinessOwners(mockData);
-        setTotalItems(mockData.length);
-        setTotalPages(Math.ceil(mockData.length / itemsPerPage));
-        setLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch business owners:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchBusinessOwners();
-  }, [itemsPerPage]);
-
-  // Apply search and filters
-  useEffect(() => {
-    const applySearchAndFilters = () => {
-      let result = [...businessOwners];
-      
-      // Apply search term
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        result = result.filter(
-          (owner) =>
-            `${owner.firstName} ${owner.lastName}`.toLowerCase().includes(term) ||
-            owner.email.toLowerCase().includes(term) ||
-            owner.id.toLowerCase().includes(term) ||
-            (owner.city && owner.city.toLowerCase().includes(term))
-        );
-      }
-      
-      // Apply filters
-      if (filterOptions.status) {
-        result = result.filter((owner) => owner.status === filterOptions.status);
-      }
-      
-      if (filterOptions.verificationStatus) {
-        result = result.filter(
-          (owner) => owner.verificationStatus === filterOptions.verificationStatus
-        );
-      }
-      
-      if (filterOptions.municipality) {
-        result = result.filter(
-          (owner) => owner.city === filterOptions.municipality
-        );
-      }
-      
-      if (filterOptions.assignedManager) {
-        result = result.filter(
-          (owner) => owner.assignedManagerId === filterOptions.assignedManager
-        );
-      }
-      
-      // Apply sorting
-      result.sort((a, b) => {
-        let fieldA: any = a[sortField as keyof BusinessOwner];
-        let fieldB: any = b[sortField as keyof BusinessOwner];
-        
-        // Handle nested properties or null values
-        if (fieldA === null) fieldA = '';
-        if (fieldB === null) fieldB = '';
-        
-        if (typeof fieldA === 'string') fieldA = fieldA.toLowerCase();
-        if (typeof fieldB === 'string') fieldB = fieldB.toLowerCase();
-        
-        if (sortDirection === 'asc') {
-          return fieldA < fieldB ? -1 : fieldA > fieldB ? 1 : 0;
-        } else {
-          return fieldA > fieldB ? -1 : fieldA < fieldB ? 1 : 0;
+        if (!response.ok) {
+          throw new Error('Failed to fetch business owners');
         }
-      });
+        
+        const data = await response.json();
+        
+        setOwners(data.owners || []);
+        setTotalPages(data.totalPages || 1);
+      } catch (err) {
+        console.error('Error fetching business owners:', err);
+        setError(err.message || 'An error occurred while fetching business owners');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchOwners();
+  }, [currentPage, searchQuery]);
+
+  // Handle refresh after adding new owner
+  const handleRefreshList = async () => {
+    setCurrentPage(1);
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/business-owners?page=1&search=${searchQuery}`);
       
-      setFilteredOwners(result);
-      setTotalItems(result.length);
-      setTotalPages(Math.ceil(result.length / itemsPerPage));
-      setCurrentPage(1);
-    };
-    
-    applySearchAndFilters();
-  }, [businessOwners, searchTerm, filterOptions, sortField, sortDirection]);
-
-  // Calculate pagination
-  const getCurrentPageItems = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredOwners.slice(startIndex, endIndex);
-  };
-
-  // Handle search
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-  };
-
-  // Handle filter changes
-  const handleFilterChange = (newFilters: Partial<FilterOptions>) => {
-    setFilterOptions({ ...filterOptions, ...newFilters });
-  };
-
-  // Handle bulk actions
-  const handleBulkAction = (action: string) => {
-    if (selectedOwners.length === 0) return;
-    
-    console.log(`Performing ${action} on:`, selectedOwners);
-    
-    // Implement bulk action logic here
-    switch (action) {
-      case "assignManager":
-        // Logic for assigning manager to selected owners
-        break;
-      case "changeStatus":
-        // Logic for changing status of selected owners
-        break;
-      case "export":
-        // Logic for exporting selected owners
-        break;
-      case "batchVerify":
-        // Logic for batch verifying selected owners
-        break;
-      case "delete":
-        // Logic for deleting selected owners
-        break;
-      default:
-        break;
+      if (!response.ok) {
+        throw new Error('Failed to refresh business owners list');
+      }
+      
+      const data = await response.json();
+      
+      setOwners(data.owners || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      setError(err.message || 'An error occurred while refreshing the list');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle selection
-  const handleSelectionChange = (ownerIds: string[]) => {
-    setSelectedOwners(ownerIds);
+  // Navigate to owner detail page
+  const handleViewOwner = (ownerId) => {
+    router.push(`/business-owners/${ownerId}`);
   };
 
-  // Handle sorting
-  const handleSortChange = (field: string) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
+  // Animation variants for list items
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24
+      }
     }
   };
 
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  if (isLoading && owners.length === 0) {
+    return <LoadingSkeleton />;
+  }
 
-  // Handle opening the modal to add a new business owner
-  const handleOpenAddOwnerModal = () => {
-    setShowAddOwnerModal(true);
-  };
-
-  // Handle adding a new business owner
-  const handleAddBusinessOwner = (newOwnerData: any) => {
-    const newOwner: BusinessOwner = {
-      ...newOwnerData,
-      businessesCount: 0,
-      activePermitsCount: 0,
-      expiringPermitsCount: 0,
-      city: null,
-      assignedManagerId: null,
-      assignedManagerName: null,
-      createdAt: new Date().toISOString(),
-    };
-
-    // In a real implementation, this would be an API call
-    // For now, just add to the local state
-    setBusinessOwners([newOwner, ...businessOwners]);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-900">
-        <Spinner size="lg" color="blue" />
-      </div>
-    );
+  if (error) {
+    return <ErrorState message={error} onRetry={handleRefreshList} />;
   }
 
   return (
-    <div className="bg-gray-900 min-h-screen text-white">
-      {isDesktop ? (
-        <DesktopBusinessOwnerList
-          owners={getCurrentPageItems()}
-          totalItems={totalItems}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          totalPages={totalPages}
-          selectedOwners={selectedOwners}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSearch={handleSearch}
-          onFilterChange={handleFilterChange}
-          onSortChange={handleSortChange}
-          onSelectionChange={handleSelectionChange}
-          onBulkAction={handleBulkAction}
-          onPageChange={handlePageChange}
-          onOpenAddOwnerModal={handleOpenAddOwnerModal}
-          filterOptions={filterOptions}
-        />
-      ) : (
-        <MobileBusinessOwnerList
-          owners={getCurrentPageItems()}
-          totalItems={totalItems}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          totalPages={totalPages}
-          selectedOwners={selectedOwners}
-          onSearch={handleSearch}
-          onFilterChange={handleFilterChange}
-          onSelectionChange={handleSelectionChange}
-          onBulkAction={handleBulkAction}
-          onPageChange={handlePageChange}
-          onOpenAddOwnerModal={handleOpenAddOwnerModal}
-          filterOptions={filterOptions}
-        />
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Business Owners</h1>
+          <p className="text-text-secondary mt-1">Manage business owner profiles and verification</p>
+        </div>
+        
+        <Button
+          size="md"
+          type="button"
+          onClick={() => setIsAddModalOpen(true)}
+        >
+          <Plus size={20} className="mr-2" />
+          Add Business Owner
+        </Button>
+      </div>
+      
+      {/* Search and filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative w-full sm:w-64">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlass size={20} className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search owners..."
+            className="bg-gray-700 text-white rounded-md py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-primary"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        {/* Additional filters could be added here */}
+      </div>
+      
+      {/* Mobile view - Cards */}
+      {isMobile && (
+        <>
+          {owners.length === 0 ? (
+            <EmptyState onAddNew={() => setIsAddModalOpen(true)} />
+          ) : (
+            <motion.div 
+              className="grid grid-cols-1 gap-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {owners.map((owner) => (
+                <motion.div key={owner.id} variants={itemVariants}>
+                  <Card 
+                    className="card-glass hover:bg-surface/80 transition-colors cursor-pointer"
+                    onClick={() => handleViewOwner(owner.id)}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center gap-4 mb-3">
+                        <Avatar 
+                          shape="circle" 
+                          size="md" 
+                          className="bg-primary/20 text-primary"
+                        >
+                          {`${owner.firstName?.charAt(0) || ''}${owner.lastName?.charAt(0) || ''}`}
+                        </Avatar>
+                        <div>
+                          <h3 className="font-medium text-text-primary">{`${owner.firstName} ${owner.lastName}`}</h3>
+                          <p className="text-sm text-text-secondary">{owner.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-y-2 text-sm">
+                        <div>
+                          <span className="text-text-secondary">Phone:</span>
+                        </div>
+                        <div className="text-text-primary">{owner.phone || 'N/A'}</div>
+                        
+                        <div>
+                          <span className="text-text-secondary">Status:</span>
+                        </div>
+                        <div>
+                          <Badge 
+                            colorType="light" 
+                            color={statusVariants[owner.verificationStatus] || 'gray'}
+                            className="capitalize"
+                          >
+                            {owner.verificationStatus?.toLowerCase().replace('_', ' ') || 'Unverified'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </>
       )}
+      
+      {/* Desktop view - Table */}
+      {!isMobile && (
+        <>
+          {owners.length === 0 ? (
+            <EmptyState onAddNew={() => setIsAddModalOpen(true)} />
+          ) : (
+            <Card className="overflow-hidden border border-white/10 bg-surface/60 backdrop-blur-sm">
+              <Table>
+                <Table.Head>
+                  <Table.HeadCell className="bg-gray-800 text-gray-300">Name</Table.HeadCell>
+                  <Table.HeadCell className="bg-gray-800 text-gray-300">Email</Table.HeadCell>
+                  <Table.HeadCell className="bg-gray-800 text-gray-300">Phone</Table.HeadCell>
+                  <Table.HeadCell className="bg-gray-800 text-gray-300">Status</Table.HeadCell>
+                  <Table.HeadCell className="bg-gray-800 text-gray-300">Actions</Table.HeadCell>
+                </Table.Head>
+                <motion.tbody
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {owners.map((owner) => (
+                    <motion.tr 
+                      key={owner.id} 
+                      className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors cursor-pointer"
+                      onClick={() => handleViewOwner(owner.id)}
+                      variants={itemVariants}
+                    >
+                      <Table.Cell className="whitespace-nowrap font-medium text-text-primary">
+                        <div className="flex items-center gap-3">
+                          <Avatar 
+                            shape="circle" 
+                            size="sm" 
+                            className="bg-primary/20 text-primary"
+                          >
+                            {`${owner.firstName?.charAt(0) || ''}${owner.lastName?.charAt(0) || ''}`}
+                          </Avatar>
+                          {`${owner.firstName} ${owner.lastName}`}
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell className="text-text-secondary">{owner.email}</Table.Cell>
+                      <Table.Cell className="text-text-secondary">{owner.phone || 'N/A'}</Table.Cell>
+                      <Table.Cell>
+                        <Badge 
+                          colorType="light" 
+                          color={statusVariants[owner.verificationStatus] || 'gray'}
+                          className="capitalize"
+                        >
+                          {owner.verificationStatus?.toLowerCase().replace('_', ' ') || 'Unverified'}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Button 
+                          type="button" 
+                          size="xs"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // You could implement a dropdown menu for more actions here
+                          }}
+                        >
+                          <DotsThreeOutline size={16} />
+                        </Button>
+                      </Table.Cell>
+                    </motion.tr>
+                  ))}
+                </motion.tbody>
+              </Table>
+            </Card>
+          )}
+        </>
+      )}
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            totalPages={totalPages}
+            showControls
+            className="bg-surface/60 backdrop-blur-sm border border-white/10 rounded-lg"
+          />
+        </div>
+      )}
+      
+      {/* Add Business Owner Modal */}
+      <AddOwnerModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={handleRefreshList}
+      />
     </div>
   );
-};
-
-export default BusinessOwnersPage;
+}
