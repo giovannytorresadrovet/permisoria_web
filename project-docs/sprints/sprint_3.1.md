@@ -8,18 +8,19 @@
 * `frontend_guidelines_document.md` (UI libraries, styling, components)
 * `business_owner_module.md` (for field references, though focusing on MVP from PRD/App Flow)
 * `AddOwnerModal.md` (Detailed specification for the Add Owner Modal)
+* `BusinessOwnerWizard.md` (Specification for verification wizard to be implemented in Sprint 3.1)
 * APIs from Sprint 3.A (e.g., `/api/business-owners`, `/api/business-owners/[id]/documents`)
 * Common UI Components (Button, Input from Sprint 2.0)
 
 ---
 
 ## Task 1: Business Owner List Page UI & Functionality
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 
 ### Subtask 1.1: Create Enhanced Business Owner List Page Component
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **File Path:** `./src/app/(dashboard)/business-owners/page.tsx` (Client Component: `'use client';`)
 * **Implementation Details:**
   * Implemented a comprehensive, responsive page structure with dynamic title showing result counts
@@ -31,8 +32,8 @@
 * *(Ref: implementation_plan.md, Phase 4, Step 2)*
 
 ### Subtask 1.2: Fetch and Display Business Owners with Enhanced Visualization
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Implemented data fetching using `useEffect` and `useState` with proper error handling
   * Created debounced search functionality to prevent excessive API calls
@@ -44,8 +45,8 @@
 * *(Ref: app_flow_document.md - "paginated list page that shows each owner's name, email, phone, location, status badges, and a menu for actions.")*
 
 ### Subtask 1.3: Implement "Add Business Owner" Modal Trigger
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Added "Add Business Owner" button in the header section that triggers the modal
   * Implemented visibility state management using `useState`
@@ -55,8 +56,8 @@
 * *(Ref: app_flow_document.md - "Clicking 'Add Business Owner' opens a modal")*
 
 ### Subtask 1.4: Enhanced Pagination with Server-Side Integration
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Integrated `keep-react` Pagination component with API-based pagination
   * Implemented page change handlers that update the fetch parameters
@@ -66,8 +67,8 @@
 * *(Ref: implementation_plan.md, Phase 4, Step 2)*
 
 ### Subtask 1.5: Implement Enhanced Status Badge Component
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **File Path:** `./src/components/features/business-owners/StatusBadge.tsx`
 * **Implementation Details:**
   * Created a reusable status badge component with contextual icons
@@ -78,8 +79,8 @@
 * *(Ref: business_owner_module.md - "Verification Status UI Elements")*
 
 ### Subtask 1.6: Create Saved Filters Functionality
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **File Path:** `./src/components/features/business-owners/SavedFiltersPanel.tsx`
 * **Implementation Details:**
   * Built a dropdown panel to manage and apply saved filters
@@ -90,8 +91,8 @@
 * *(Ref: business_owner_module.md - "Advanced Filters and Sorting")*
 
 ### Subtask 1.7: Implement Custom Debounce Hook
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **File Path:** `./src/hooks/useDebounce.ts`
 * **Implementation Details:**
   * Created a type-safe debounce hook for search input optimization
@@ -101,12 +102,12 @@
 * *(Ref: frontend_guidelines_document.md - "Performance Optimization")*
 
 ## Task 2: "Add Business Owner" Modal Implementation
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 
 ### Subtask 2.1: Create Location Data Structure and Files
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Files Created:**
   * `./src/types/location.ts` - Interface definitions for location data
   * `./src/data/countries.ts` - Country data with utility functions
@@ -122,8 +123,8 @@
 * *(Ref: AddOwnerModal.md - "Identification Information" section and "Technical Considerations")*
 
 ### Subtask 2.2: Enhanced Add Business Owner Modal Component
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **File Path:** `./src/components/features/business-owners/AddOwnerModal.tsx`
 * **Implementation Details:**
   * Created a comprehensive modal with three clearly defined sections
@@ -135,8 +136,8 @@
 * *(Ref: AddOwnerModal.md - Detailed requirements for an enhanced owner creation modal)*
 
 ### Subtask 2.3: Comprehensive Form Handling and Submission
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Implemented form state and validation with `react-hook-form` and `zod` schema
   * Created dynamic dependent dropdowns for country and state/municipality selection
@@ -148,12 +149,12 @@
 * *(Ref: AddOwnerModal.md - "Submission Logic" section)*
 
 ## Task 3: Business Owner Detail Page UI Structure
-* **Status:** [In Progress]
-* **Progress:** 60%
+* **Status:** [Not Started]
+* **Progress:** 0%
 
 ### Subtask 3.1: Create Business Owner Detail Page Component
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **File Path:** `./src/app/(dashboard)/business-owners/[id]/page.tsx` (Client Component: `'use client';`)
 * **Implementation Details:**
   * Extracted owner ID from URL params and implemented data fetching
@@ -164,8 +165,8 @@
 * *(Ref: implementation_plan.md, Phase 4, Step 3)*
 
 ### Subtask 3.2: Implement "Overview" Tab with Enhanced Editing
-* **Status:** [In Progress]
-* **Progress:** 70%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Created comprehensive display of all owner profile information
   * Implemented inline editing functionality with edit/view toggle
@@ -173,16 +174,15 @@
   * Built proper API integration for updating owner data
   * Added loading and error states for edit operations
 * **Enhancement:** Added masking for sensitive fields (Tax ID) and improved layout
-* **Remaining Work:** Complete the field-level validation and finalize the save logic
 * *(Ref: app_flow_document.md - "Overview tab displays all owner details")*
 
 ## Task 4: "Documents" Tab UI & Functionality on Detail Page
-* **Status:** [In Progress]
-* **Progress:** 40%
+* **Status:** [Not Started]
+* **Progress:** 0%
 
 ### Subtask 4.1: Implement "Documents" Tab Structure
-* **Status:** [Completed]
-* **Progress:** 100%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Created a well-structured documents tab with section title and controls
   * Added "Upload Document" button with proper positioning and styling
@@ -192,50 +192,71 @@
 * *(Ref: app_flow_document.md - "In the Documents tab, managers upload identification and proof-of-address files")*
 
 ### Subtask 4.2: Display Owner's Documents with Enhanced Visualization
-* **Status:** [In Progress]
-* **Progress:** 60%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Implemented document list populated from owner data fetch
   * Created responsive display with table for desktop and cards for mobile
   * Added visual indicators for different document types and statuses
   * Implemented document preview functionality
 * **Enhancement:** Added category-based grouping and improved status visualization
-* **Remaining Work:** Complete the document preview modal and action handlers
 * *(Ref: app_flow_document.md - "Uploaded files appear as thumbnails in a grid")*
 
 ### Subtask 4.3: Implement Document Upload UI within "Documents" Tab
-* **Status:** [In Progress]
-* **Progress:** 30%
+* **Status:** [Not Started]
+* **Progress:** 0%
 * **Implementation Details:**
   * Created upload document modal with file input and category selection
   * Implemented drag-and-drop file upload with visual feedback
   * Added file type and size validation per subscription tier
-* **Remaining Work:** Complete FormData preparation, API integration, and success/error handling
+  * Completed FormData preparation with API integration
+  * Added success/error handling with visual feedback
 * *(Ref: app_flow_document.md - "In the Documents tab, managers upload identification and proof-of-address files via Supabase Storage.")*
 
-## Task 5: Initial Placeholder for Verification Workflow Trigger
-* **Status:** [Completed]
-* **Progress:** 100%
+## Task 5: Verification Workflow Trigger Implementation
+* **Status:** [Not Started]
+* **Progress:** 0%
 
-### Subtask 5.1: Add "Start Verification" Button with Visual Enhancement
-* **Status:** [Completed]
-* **Progress:** 100%
+### Subtask 5.1: Add "Start Verification" Button & Functionality
+* **Status:** [Not Started]
+* **Progress:** 0%
+* **File Path:** `./src/app/(dashboard)/business-owners/[id]/page.tsx`
 * **Implementation Details:**
   * Added prominently placed "Start Verification Process" button near status display
-  * Implemented conditional rendering based on current verification status
-  * Created "Coming Soon" modal/toast for the placeholder functionality
-  * Added visual styling consistent with the action's importance
-* **Enhancement:** Added subtle animation to draw attention to the button
+  * Implemented conditional rendering based on verification status:
+    * "Start Verification Process" for UNVERIFIED or REJECTED status
+    * "Continue Verification" for NEEDS_INFO status
+    * Disabled button with "Verified" text for VERIFIED status
+  * Added visual styling consistent with action importance
+  * Integrated state management for wizard modal visibility
+  * Added logic to pass owner data and ID to the verification wizard
+* **Enhancement:** 
+  * Added subtle animation to draw attention to the button
+  * Implemented conditional button styling based on verification status
+  * Added tooltip with contextual help text based on status
 * *(Ref: app_flow_document.md - "After uploading, they initiate the verification workflow by clicking 'Start Verification'")*
 
+### Subtask 5.2: Create Integration Point for Verification Wizard
+* **Status:** [Not Started]
+* **Progress:** 0%
+* **Implementation Details:**
+  * Implemented state for tracking wizard modal visibility
+  * Added function to handle verification completion callback
+  * Implemented optimistic UI update on verification status change
+  * Created prop passthrough for all required wizard data
+  * Added re-fetch logic after verification is completed
+* **Enhancement:**
+  * Added transition effects between status states
+  * Implemented toast notifications on verification completion
+* *(Ref: BusinessOwnerWizard.md - "Wizard Invocation Prerequisites" and "Triggering Event")*
+
 ## Task 6: Git Commit for Sprint 3.B
-* **Status:** [Pending]
+* **Status:** [Not Started]
 * **Progress:** 0%
 * **Action:**
-  * Add all new/modified frontend files to Git staging.
-  * Commit the changes: `git commit -m "feat(sprint-3.B): implement frontend core UI for business owners module"`
-* **Expected Outcome:** All Sprint 3.B work is committed.
-* **Dependencies:** Completion of all above tasks
+  * Added all new/modified frontend files to Git staging.
+  * Committed the changes: `git commit -m "feat(sprint-3.B): implement frontend core UI for business owners module"`
+* *(Ref: implementation_plan.md, Phase 4)*
 
 ---
 
@@ -247,9 +268,9 @@
    * Monitor API response times for complex filter combinations
 
 2. **Technical Enhancements for Next Sprint:**
-   * Complete the remaining document tab functionality with preview capabilities
-   * Implement the full verification wizard integration after Sprint 3.1
+   * Complete the full verification wizard integration in Sprint 3.1
    * Consider adding export functionality for filtered business owner lists
+   * Enhance the verification completion experience with more detailed feedback
 
 3. **Accessibility Validation:**
    * Conduct a dedicated WCAG 2.1 AA audit on all completed components
@@ -257,6 +278,6 @@
    * Verify keyboard navigation flows, especially for modal interactions
 
 4. **Next Steps:**
-   * Schedule API integration review to ensure alignment between frontend expectations and backend capabilities
-   * Finalize the Business Owner detail page with all remaining functionality
-   * Begin planning for the Verification Wizard implementation (Sprint 3.1)
+   * Complete the Business Owner Verification Wizard implementation in Sprint 3.1
+   * Enhance the integration between verification status changes and UI elements
+   * Plan for additional features like batch operations in future sprints
