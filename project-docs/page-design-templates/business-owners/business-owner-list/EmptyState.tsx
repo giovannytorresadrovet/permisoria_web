@@ -1,3 +1,4 @@
+// src/components/features/business-owners/EmptyState.tsx
 'use client';
 
 import { motion } from 'framer-motion';
@@ -19,9 +20,11 @@ export default function EmptyState({ onAddNew }: EmptyStateProps) {
         stiffness: 300, 
         damping: 30 
       }}
+      aria-live="polite"
+      role="status"
     >
       <div className="mx-auto w-20 h-20 flex items-center justify-center rounded-full bg-primary/10 mb-6">
-        <Users size={36} className="text-primary" weight="duotone" />
+        <Users size={36} className="text-primary" weight="duotone" aria-hidden="true" />
       </div>
       
       <h3 className="text-xl font-semibold text-text-primary mb-2">No Business Owners Found</h3>
@@ -34,8 +37,9 @@ export default function EmptyState({ onAddNew }: EmptyStateProps) {
         type="button"
         onClick={onAddNew}
         className="mx-auto"
+        aria-label="Add new business owner"
       >
-        <Plus size={20} className="mr-2" />
+        <Plus size={20} className="mr-2" aria-hidden="true" />
         Add Business Owner
       </Button>
     </motion.div>

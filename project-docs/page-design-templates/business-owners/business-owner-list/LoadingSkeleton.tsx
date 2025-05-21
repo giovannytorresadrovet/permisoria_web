@@ -1,8 +1,19 @@
+// src/components/features/business-owners/LoadingSkeleton.tsx
 'use client';
 
+import React from 'react';
 import { Card } from 'keep-react';
 
 export default function LoadingSkeleton() {
+  // Array of column widths for more realistic appearance
+  const columnWidths = [
+    ['w-3/4', 'w-2/3', 'w-1/2', 'w-2/5', 'w-1/4'], // Row 1
+    ['w-4/5', 'w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'], // Row 2
+    ['w-2/3', 'w-1/2', 'w-3/5', 'w-3/5', 'w-2/5'], // Row 3
+    ['w-3/4', 'w-2/5', 'w-3/5', 'w-2/5', 'w-1/4'], // Row 4
+    ['w-4/5', 'w-1/2', 'w-2/5', 'w-1/2', 'w-1/3'], // Row 5
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header skeleton */}
@@ -14,8 +25,11 @@ export default function LoadingSkeleton() {
         <div className="h-10 w-40 bg-gray-700 rounded-md animate-pulse"></div>
       </div>
       
-      {/* Search skeleton */}
-      <div className="h-10 w-64 bg-gray-700 rounded animate-pulse"></div>
+      {/* Search and filters skeleton */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="h-10 w-full sm:w-64 bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-10 w-full sm:w-48 bg-gray-700 rounded animate-pulse"></div>
+      </div>
       
       {/* Table/cards skeleton */}
       <Card className="overflow-hidden border border-white/10 bg-surface/60 backdrop-blur-sm p-4">
@@ -23,7 +37,14 @@ export default function LoadingSkeleton() {
           {/* Table header skeleton */}
           <div className="grid grid-cols-5 gap-4 pb-4 border-b border-gray-700">
             {[...Array(5)].map((_, index) => (
-              <div key={index} className="h-6 bg-gray-700 rounded animate-pulse"></div>
+              <div 
+                key={index} 
+                className={`h-6 bg-gray-700 rounded animate-pulse`}
+                style={{ 
+                  animationDelay: `${index * 0.1}s`,
+                  animationDuration: '1.5s'
+                }}
+              ></div>
             ))}
           </div>
           
@@ -33,11 +54,10 @@ export default function LoadingSkeleton() {
               {[...Array(5)].map((_, colIndex) => (
                 <div 
                   key={colIndex} 
-                  className={`h-6 bg-gray-700 rounded animate-pulse ${
-                    colIndex === 0 ? 'w-full' : colIndex === 4 ? 'w-10' : 'w-3/4'
-                  }`}
+                  className={`h-6 bg-gray-700 rounded animate-pulse ${columnWidths[rowIndex][colIndex]}`}
                   style={{ 
-                    animationDelay: `${(rowIndex * 5 + colIndex) * 0.05}s`,
+                    animationDelay: `${(rowIndex * 0.1 + colIndex * 0.05)}s`,
+                    animationDuration: '1.8s',
                     opacity: 0.7 + (5 - rowIndex) * 0.05 
                   }}
                 ></div>
@@ -46,6 +66,11 @@ export default function LoadingSkeleton() {
           ))}
         </div>
       </Card>
+      
+      {/* Pagination skeleton */}
+      <div className="flex justify-center">
+        <div className="h-10 w-64 bg-gray-700 rounded animate-pulse"></div>
+      </div>
     </div>
   );
 }
