@@ -16,6 +16,11 @@ export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
   isLoading?: boolean;
   disabled?: boolean;
   withAnimation?: boolean;
+  loadingText?: string;
+  /**
+   * Optional icon to display before button text
+   */
+  icon?: React.ReactNode;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -29,6 +34,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       isLoading = false,
       disabled = false,
       withAnimation = true,
+      loadingText,
+      icon,
       ...props
     },
     ref
@@ -46,6 +53,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         size,
         disabled: disabled || isLoading,
         className: cn(baseStyles, className),
+        "aria-disabled": disabled || isLoading ? "true" : undefined,
+        ...(isLoading && { 
+          "aria-busy": "true",
+          "aria-live": "polite"
+        }),
       };
 
       // Add variant-specific props
@@ -70,6 +82,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Create a modified version of props with loading removed
     const { loading, ...restProps } = { loading: isLoading, ...props } as any;
 
+    // Enhance the button with screen reader information
     const buttonContent = (
       // @ts-ignore - Ignoring type issues with keep-react
       <KeepReactButton 
@@ -77,7 +90,26 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...keepReactProps}
         {...restProps}
       >
-        {children}
+        <span className="flex items-center justify-center">
+          {isLoading && (
+            <span 
+              className="inline-block mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin" 
+              role="progressbar" 
+              aria-hidden="true"
+            />
+          )}
+          {icon && !isLoading && (
+            <span className="mr-2" aria-hidden="true">
+              {icon}
+            </span>
+          )}
+          <span>
+            {isLoading && loadingText ? loadingText : children}
+          </span>
+          {isLoading && !loadingText && (
+            <span className="sr-only">Loading</span>
+          )}
+        </span>
       </KeepReactButton>
     );
 
@@ -96,4 +128,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return buttonContent;
   }
-); 
+);
+
+Button.displayName = 'Button'; 

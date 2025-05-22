@@ -1,128 +1,248 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from 'keep-react';
-import { ArrowRight, ArrowLeft } from 'phosphor-react';
-import NotesSection from '../shared/NotesSection';
+import { Buildings, Plus, FileX, Info } from 'phosphor-react';
+
+// Import shared components
 import DocumentUpload from '../shared/DocumentUpload';
 import DocumentViewer from '../shared/DocumentViewer';
-import VerificationChecklist from '../shared/VerificationChecklist';
 import DocumentStatusSelector from '../shared/DocumentStatusSelector';
+import { DocumentStatus } from '../shared/DocumentStatusSelector';
+
+// Types for verification data
+type SectionStatus = 
+  | 'INCOMPLETE'
+  | 'IN_PROGRESS'
+  | 'COMPLETE'
+  | 'VERIFIED'
+  | 'REJECTED'
+  | 'NEEDS_INFO';
+
+// Mapping between section status and document status
+const mapSectionStatusToDocumentStatus = (status: SectionStatus): DocumentStatus => {
+  const statusMap: Record<SectionStatus, DocumentStatus> = {
+    'INCOMPLETE': 'PENDING',
+    'IN_PROGRESS': 'PENDING',
+    'COMPLETE': 'VERIFIED',
+    'VERIFIED': 'VERIFIED',
+    'REJECTED': 'OTHER_ISSUE',
+    'NEEDS_INFO': 'OTHER_ISSUE'
+  };
+  return statusMap[status];
+};
+
+// Mapping between document status and section status
+const mapDocumentStatusToSectionStatus = (status: DocumentStatus): SectionStatus => {
+  if (status === 'VERIFIED') return 'VERIFIED';
+  if (status === 'PENDING') return 'IN_PROGRESS';
+  return 'NEEDS_INFO';
+};
+
+interface VerificationSection {
+  status: SectionStatus;
+  notes?: string;
+  lastUpdated?: Date;
+}
+
+interface DocumentVerification {
+  id: string;
+  documentId: string;
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO';
+  notes?: string;
+  document: {
+    id: string;
+    filename: string;
+    category: string;
+  };
+}
 
 interface BusinessAffiliationStepProps {
-  verification: any; // This would be properly typed with the actual verification state
-  onNext: () => void;
-  onPrev: () => void;
+  section: VerificationSection;
+  documents: DocumentVerification[];
+  onUpdateSection: (status: SectionStatus, notes?: string) => void;
+  onUpdateDocument: (documentId: string, status: DocumentVerification['status'], notes?: string) => Promise<boolean>;
+  ownerId: string;
 }
 
 export default function BusinessAffiliationStep({
-  verification,
-  onNext,
-  onPrev
+  section,
+  documents,
+  onUpdateSection,
+  onUpdateDocument,
+  ownerId
 }: BusinessAffiliationStepProps) {
-  const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+  // State for viewing documents
+  const [viewingDocument, setViewingDocument] = useState<{
+    url: string;
+    filename: string;
+    contentType: string;
+  } | null>(null);
   
-  // For demonstration purposes
-  const mockDocument = selectedDocument ? {
-    id: 'doc-789',
-    url: 'https://sample-files.com/download/pdf/sample.pdf',
-    fileName: 'sample-business-document.pdf'
-  } : null;
+  // State for section notes
+  const [sectionNotes, setSectionNotes] = useState(section.notes || '');
+  
+  // Handle document upload success
+  const handleUploadSuccess = (result: any) => {
+    // In a real implementation, this would automatically add the document to the documents array
+    // For now, we'll just show a success message
+    alert('Document uploaded successfully!');
+  };
+  
+  // Handle document view
+  const handleViewDocument = (doc: DocumentVerification) => {
+    // In a real implementation, we would fetch the document URL
+    // For now, we'll use a placeholder
+    setViewingDocument({
+      url: `https://example.com/documents/${doc.documentId}`,
+      filename: doc.document.filename,
+      contentType: doc.document.category === 'business_affiliation' ? 'application/pdf' : 'image/jpeg'
+    });
+  };
+  
+  // Handle section status update
+  const handleSectionStatusChange = (newStatus: DocumentStatus) => {
+    onUpdateSection(mapDocumentStatusToSectionStatus(newStatus), sectionNotes);
+  };
+  
+  // Handle section notes update
+  const handleSectionNotesChange = (notes: string) => {
+    setSectionNotes(notes);
+    onUpdateSection(section.status, notes);
+  };
+  
+  // Handle document status update
+  const handleDocumentStatusChange = async (doc: DocumentVerification, newStatus: DocumentStatus) => {
+    // Map DocumentStatus from the UI component to the backend status
+    const backendStatus = newStatus as DocumentVerification['status'];
+    
+    // Update document status
+    await onUpdateDocument(doc.documentId, backendStatus, doc.notes);
+  };
   
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-100 mb-4">
-        Business Affiliation Verification
-      </h2>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex items-center mb-6">
+        <div className="bg-blue-600 p-3 rounded-full mr-4">
+          <Buildings size={28} className="text-white" />
+        </div>
         <div>
-          {/* Document upload section */}
+          <h2 className="text-xl font-semibold text-white">Business Affiliation Verification</h2>
+          <p className="text-gray-400">
+            Upload documents that prove your affiliation with the business
+          </p>
+        </div>
+      </div>
+      
+      {/* Instructions */}
+      <div className="bg-gray-750 border border-gray-700 rounded-lg p-4 mb-6">
+        <div className="flex items-start">
+          <Info size={20} className="text-blue-500 mr-3 mt-1 flex-shrink-0" />
+          <div>
+            <h3 className="text-gray-200 font-medium mb-2">Requirements</h3>
+            <ul className="text-gray-400 list-disc pl-5 space-y-1 text-sm">
+              <li>Corporate resolution authorizing you to act on behalf of the business</li>
+              <li>Certificate of incorporation or business registration</li>
+              <li>Operating agreement or partnership agreement (if applicable)</li>
+              <li>Tax identification documents showing your association with the business</li>
+              <li>Any other documentation that proves your official role in the business</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      {/* Document upload section */}
+      <div className="mb-8">
+        <h3 className="text-lg font-medium text-white mb-4">Upload Business Affiliation Documents</h3>
+        
+        {/* Existing documents */}
+        {documents.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {documents.map((doc) => (
+              <div key={doc.id} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-medium text-gray-300 truncate">{doc.document.filename}</h4>
+                    <button
+                      onClick={() => handleViewDocument(doc)}
+                      className="text-blue-500 hover:text-blue-400 text-sm"
+                    >
+                      View
+                    </button>
+                  </div>
+                  
+                  <DocumentStatusSelector
+                    status={doc.status as DocumentStatus}
+                    notes={doc.notes}
+                    onStatusChange={(status) => handleDocumentStatusChange(doc, status)}
+                    onNotesChange={(notes) => onUpdateDocument(doc.documentId, doc.status, notes)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center mb-6">
+            <FileX size={40} className="text-gray-500 mb-2" />
+            <p className="text-gray-400 mb-2">No business affiliation documents uploaded yet</p>
+            <p className="text-gray-500 text-sm text-center max-w-md mb-4">
+              Please upload at least one document proving your business affiliation to continue with the verification process
+            </p>
+          </div>
+        )}
+        
+        {/* Upload new document button */}
+        <div className="mb-6">
+          <h4 className="text-gray-300 font-medium mb-3">Upload New Document</h4>
           <DocumentUpload
-            documentType="Business Ownership"
-            onUploadComplete={(doc) => {
-              console.log('Document uploaded:', doc);
-              // In a real implementation, this would update the state
-            }}
-            ownerId="123" // Would use actual owner ID
+            onUploadSuccess={handleUploadSuccess}
+            onUploadError={(error) => console.error('Upload error:', error)}
+            ownerId={ownerId}
+            category="business_affiliation"
+            className="max-w-xl"
           />
-          
-          {/* Business verification checklist */}
-          <div className="mt-6">
-            <VerificationChecklist
-              title="Business Affiliation Checklist"
-              items={verification.state.checklists.business}
-              category="business"
-              onToggle={verification.toggleChecklistItem}
-              onNaToggle={verification.toggleNaChecklistItem}
-              onNaReasonChange={verification.updateNaReason}
-              helpTexts={{
-                'business-owner': 'Verify the person is listed as an owner, partner, or authorized representative',
-                'business-active': 'Check that the business is active and in good standing',
-                'business-docs': 'Review business registration, articles of incorporation, or similar documents'
-              }}
+        </div>
+      </div>
+      
+      {/* Section verification status */}
+      <div className="border-t border-gray-700 pt-6 mb-4">
+        <h3 className="text-lg font-medium text-white mb-4">Verification Status</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-gray-400 mb-2">Current Status</label>
+            <DocumentStatusSelector
+              status={mapSectionStatusToDocumentStatus(section.status === 'INCOMPLETE' ? 'IN_PROGRESS' : section.status)}
+              onStatusChange={handleSectionStatusChange}
+              showNotes={false}
             />
           </div>
           
-          {/* Notes section */}
-          <NotesSection
-            title="Business Affiliation Notes"
-            value={verification.state.notes.business}
-            onChange={(value) => verification.updateNotes('business', value)}
-            placeholder="Add notes about business affiliation verification..."
-          />
-        </div>
-        
-        <div>
-          {/* Document viewer or placeholder */}
-          {mockDocument ? (
-            <DocumentViewer
-              documentUrl={mockDocument.url}
-              fileName={mockDocument.fileName}
-              onClose={() => setSelectedDocument(null)}
-            />
-          ) : (
-            <div className="bg-gray-800/50 backdrop-blur rounded-lg p-8 border border-gray-700 h-64 flex items-center justify-center">
-              <p className="text-gray-500 text-center">
-                Upload and select a business document to view it here
-              </p>
-            </div>
-          )}
-          
-          {/* Document status */}
-          <div className="mt-6">
-            <h3 className="text-gray-200 font-medium mb-2">Document Status</h3>
-            <DocumentStatusSelector
-              value={verification.state.verificationStatus.business}
-              onChange={(status) => verification.updateVerificationStatus('business', status)}
-              onNoteRequired={() => {
-                // This would focus the notes section
-              }}
+          <div>
+            <label className="block text-gray-400 mb-2">Verification Notes</label>
+            <textarea
+              value={sectionNotes}
+              onChange={(e) => handleSectionNotesChange(e.target.value)}
+              placeholder="Add any notes about this verification..."
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
             />
           </div>
         </div>
       </div>
       
-      {/* Navigation buttons */}
-      <div className="mt-8 flex justify-between">
-        <Button
-          onClick={onPrev}
-          variant="outline"
-          size="md"
-        >
-          <ArrowLeft size={16} className="mr-2" />
-          Previous Step
-        </Button>
-        
-        <Button
-          onClick={onNext}
-          variant="default"
-          size="md"
-        >
-          Next Step
-          <ArrowRight size={16} className="ml-2" />
-        </Button>
-      </div>
+      {/* Document viewer modal */}
+      {viewingDocument && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl">
+            <DocumentViewer
+              documentUrl={viewingDocument.url}
+              fileName={viewingDocument.filename}
+              documentType={viewingDocument.contentType.includes('pdf') ? 'pdf' : 'image'}
+              onClose={() => setViewingDocument(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

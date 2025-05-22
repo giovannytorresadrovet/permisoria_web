@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { ArrowLeft } from 'phosphor-react';
-import Link from 'next/link';
-import useVerificationState from '@/hooks/verification/useVerificationState';
-import useAutoSave from '@/hooks/verification/useAutoSave';
-import useIdleTimeout from '@/hooks/verification/useIdleTimeout';
-import { Button } from 'keep-react';
-import ProgressIndicator from '@/components/owners/verification-wizard/shared/ProgressIndicator';
+import React, { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight, FloppyDisk, X } from 'phosphor-react';
+
+// Hook import
+import { useVerificationWizard } from '@/hooks/verification/useVerificationWizard';
+
+// Component imports
 import AutoSaveIndicator from '@/components/owners/verification-wizard/shared/AutoSaveIndicator';
+import ProgressIndicator from '@/components/owners/verification-wizard/shared/ProgressIndicator';
+
+// Step components (will create these later as separate components)
 import WelcomeStep from '@/components/owners/verification-wizard/steps/WelcomeStep';
 import IdentityVerificationStep from '@/components/owners/verification-wizard/steps/IdentityVerificationStep';
 import AddressVerificationStep from '@/components/owners/verification-wizard/steps/AddressVerificationStep';
@@ -17,194 +19,245 @@ import BusinessAffiliationStep from '@/components/owners/verification-wizard/ste
 import SummaryStep from '@/components/owners/verification-wizard/steps/SummaryStep';
 import CompletionStep from '@/components/owners/verification-wizard/steps/CompletionStep';
 
-// Mock save function - in a real app this would connect to your API
-const saveVerificationData = async (ownerId: string, data: any) => {
-  console.log('Saving verification data for owner', ownerId, data);
-  // Simulate API call
-  return new Promise<void>(resolve => {
-    setTimeout(() => resolve(), 800);
-  });
-};
-
-// Define steps for the wizard
-const wizardSteps = [
-  { id: 1, title: 'Welcome' },
-  { id: 2, title: 'Identity' },
-  { id: 3, title: 'Address' },
-  { id: 4, title: 'Business' },
-  { id: 5, title: 'Summary' },
-  { id: 6, title: 'Completion' }
-];
-
 export default function VerificationWizardPage() {
-  const { id } = useParams() as { id: string };
-  const [currentStep, setCurrentStep] = useState(1);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const router = useRouter();
+  const params = useParams();
+  const ownerId = params.id as string;
   
-  // Initialize verification state with owner ID
-  const verification = useVerificationState(id);
+  // State for initial loading
+  const [isInitializing, setIsInitializing] = useState(true);
   
-  // Set up auto-save
-  const autoSave = useAutoSave(
-    verification.state,
-    id,
-    saveVerificationData
-  );
-  
-  // Handle idle timeout (redirect to dashboard after 30 min of inactivity)
-  const idleTimeout = useIdleTimeout(30, () => {
-    // This would redirect to dashboard in a real app
-    console.log('User inactive for too long');
-    setShowTimeoutWarning(true);
+  // Initialize the verification wizard hook
+  const {
+    state,
+    loading,
+    error,
+    nextStep,
+    prevStep,
+    goToStep,
+    updateSection,
+    updateDocumentVerification,
+    saveVerification,
+    createVerification,
+    submitVerification,
+    cancelVerification
+  } = useVerificationWizard({
+    ownerId,
+    autoSave: true,
+    autoSaveInterval: 30000 // 30 seconds
   });
   
-  // Get current steps with completion status
-  const stepsWithStatus = wizardSteps.map(step => ({
-    ...step,
-    isCompleted: step.id < currentStep,
-    isActive: step.id === currentStep
-  }));
-  
-  // Handle going to next step
-  const handleNext = () => {
-    if (currentStep < wizardSteps.length) {
-      // Trigger auto-save when moving to next step
-      autoSave.triggerSave();
-      setCurrentStep(currentStep + 1);
-      window.scrollTo(0, 0); // Scroll to top for new step
+  // Create a new verification attempt when the page loads
+  useEffect(() => {
+    async function initializeVerification() {
+      try {
+        // If there's no verification ID yet, create one
+        if (!state.id) {
+          await createVerification();
+        }
+      } catch (err) {
+        console.error('Failed to initialize verification:', err);
+      } finally {
+        setIsInitializing(false);
+      }
     }
-  };
-  
-  // Handle going to previous step
-  const handlePrev = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      window.scrollTo(0, 0); // Scroll to top for new step
+    
+    if (!loading) {
+      initializeVerification();
     }
-  };
+  }, [loading, state.id, createVerification]);
   
-  // Handle clicking on a completed step to navigate back
+  // Define steps for the progress indicator
+  const steps = [
+    { id: 1, title: 'Welcome', isCompleted: true, isActive: state.currentStep === 'welcome' },
+    { id: 2, title: 'Identity', isCompleted: state.sections.identity.status !== 'INCOMPLETE', isActive: state.currentStep === 'identity' },
+    { id: 3, title: 'Address', isCompleted: state.sections.address.status !== 'INCOMPLETE', isActive: state.currentStep === 'address' },
+    { id: 4, title: 'Business', isCompleted: state.sections.businessAffiliation.status !== 'INCOMPLETE', isActive: state.currentStep === 'business_affiliation' },
+    { id: 5, title: 'Summary', isCompleted: state.currentStep === 'complete', isActive: state.currentStep === 'summary' }
+  ];
+  
+  // Handle step navigation
   const handleStepClick = (stepId: number) => {
-    if (stepId < currentStep) {
-      setCurrentStep(stepId);
-      window.scrollTo(0, 0); // Scroll to top for new step
-    }
+    const stepMap = {
+      1: 'welcome',
+      2: 'identity',
+      3: 'address',
+      4: 'business_affiliation',
+      5: 'summary'
+    } as const;
+    
+    goToStep(stepMap[stepId as keyof typeof stepMap]);
   };
   
-  // Render the appropriate step component based on current step
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return <WelcomeStep onNext={handleNext} />;
-      case 2:
+  // Map step ID to current step number
+  const getCurrentStepNumber = () => {
+    const stepMap = {
+      'welcome': 1,
+      'identity': 2,
+      'address': 3,
+      'business_affiliation': 4,
+      'summary': 5,
+      'complete': 5
+    };
+    return stepMap[state.currentStep] || 1;
+  };
+  
+  // Render current step component
+  const renderCurrentStep = () => {
+    switch (state.currentStep) {
+      case 'welcome':
+        return <WelcomeStep onNext={nextStep} />;
+      case 'identity':
         return (
-          <IdentityVerificationStep 
-            verification={verification} 
-            onNext={handleNext} 
-            onPrev={handlePrev} 
+          <IdentityVerificationStep
+            section={state.sections.identity}
+            documents={state.documents.filter(doc => doc.document.category === 'identification')}
+            onUpdateSection={(status, notes) => updateSection('identity', status, notes)}
+            onUpdateDocument={updateDocumentVerification}
+            ownerId={ownerId}
           />
         );
-      case 3:
+      case 'address':
         return (
-          <AddressVerificationStep 
-            verification={verification} 
-            onNext={handleNext} 
-            onPrev={handlePrev} 
+          <AddressVerificationStep
+            section={state.sections.address}
+            documents={state.documents.filter(doc => doc.document.category === 'address_proof')}
+            onUpdateSection={(status, notes) => updateSection('address', status, notes)}
+            onUpdateDocument={updateDocumentVerification}
+            ownerId={ownerId}
           />
         );
-      case 4:
+      case 'business_affiliation':
         return (
-          <BusinessAffiliationStep 
-            verification={verification} 
-            onNext={handleNext} 
-            onPrev={handlePrev} 
+          <BusinessAffiliationStep
+            section={state.sections.businessAffiliation}
+            documents={state.documents.filter(doc => doc.document.category === 'business_affiliation')}
+            onUpdateSection={(status, notes) => updateSection('businessAffiliation', status, notes)}
+            onUpdateDocument={updateDocumentVerification}
+            ownerId={ownerId}
           />
         );
-      case 5:
+      case 'summary':
         return (
-          <SummaryStep 
-            verification={verification} 
-            onNext={handleNext} 
-            onPrev={handlePrev}
-            onSubmit={() => {
-              // Submit verification data
-              autoSave.triggerSave();
-              handleNext();
-            }}
+          <SummaryStep
+            sections={state.sections}
+            documents={state.documents}
+            onSubmit={submitVerification}
           />
         );
-      case 6:
-        return <CompletionStep ownerId={id} />;
+      case 'complete':
+        return <CompletionStep ownerId={ownerId} />;
       default:
         return <div>Invalid step</div>;
     }
   };
   
+  // Show loading state
+  if (loading || isInitializing) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-400"></div>
+      </div>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
+        <div className="text-red-500 text-5xl mb-4">
+          <X weight="bold" />
+        </div>
+        <h1 className="text-xl font-bold text-red-500 mb-2">Error</h1>
+        <p className="text-gray-400 mb-6 max-w-md">{error}</p>
+        <button
+          onClick={() => router.push(`/owners/${ownerId}`)}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors"
+        >
+          Return to Owner Profile
+        </button>
+      </div>
+    );
+  }
+  
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Header with back button */}
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Header */}
       <div className="mb-6 flex justify-between items-center">
-        <Link href={`/owners/${id}`} className="flex items-center text-gray-400 hover:text-blue-400 transition-colors">
-          <ArrowLeft size={16} className="mr-1" />
-          <span>Back to Owner Details</span>
-        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Business Owner Verification</h1>
+          <p className="text-gray-400 mt-1">Complete the verification process by filling out all required information</p>
+        </div>
         
-        {/* AutoSave indicator */}
-        <AutoSaveIndicator 
-          lastSaved={autoSave.lastSaved} 
-          isSaving={autoSave.isSaving} 
-          error={autoSave.error} 
-          onManualSave={autoSave.triggerSave}
-        />
-      </div>
-      
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 shadow-lg">
-        <h1 className="text-2xl font-bold text-gray-100 mb-2">Business Owner Verification</h1>
-        <p className="text-gray-400 mb-6">
-          Complete the verification process for this business owner
-        </p>
-        
-        {/* Progress indicator */}
-        <ProgressIndicator 
-          steps={stepsWithStatus} 
-          currentStep={currentStep} 
-          onStepClick={handleStepClick}
-        />
-        
-        {/* Step content */}
-        <div className="mt-8">
-          {renderStepContent()}
+        {/* Auto-save indicator */}
+        <div className="flex items-center space-x-4">
+          <AutoSaveIndicator
+            isDirty={state.isDirty}
+            isAutoSaving={state.isAutoSaving}
+            lastSaved={state.lastSaved}
+            saveError={error}
+          />
+          
+          <button
+            onClick={cancelVerification}
+            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded transition-colors flex items-center"
+          >
+            <X size={16} className="mr-1" />
+            Cancel
+          </button>
+          
+          <button
+            onClick={saveVerification}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded transition-colors flex items-center"
+          >
+            <FloppyDisk size={16} className="mr-1" />
+            Save
+          </button>
         </div>
       </div>
       
-      {/* Inactivity warning dialog */}
-      {showTimeoutWarning && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-gray-100 mb-4">Session Timeout Warning</h2>
-            <p className="text-gray-300 mb-6">
-              Your session has been inactive for an extended period. Would you like to continue working or return to the dashboard?
-            </p>
-            <div className="flex justify-end space-x-3">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setShowTimeoutWarning(false)}
-              >
-                Continue Working
-              </Button>
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  size="sm"
-                >
-                  Return to Dashboard
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Progress indicator */}
+      <ProgressIndicator
+        steps={steps}
+        currentStep={getCurrentStepNumber()}
+        onStepClick={handleStepClick}
+      />
+      
+      {/* Current step */}
+      <div className="bg-gray-800 rounded-lg p-6 mb-6 shadow-lg">
+        {renderCurrentStep()}
+      </div>
+      
+      {/* Navigation buttons */}
+      <div className="flex justify-between">
+        <button
+          onClick={prevStep}
+          disabled={state.currentStep === 'welcome' || state.currentStep === 'complete'}
+          className={`px-4 py-2 rounded flex items-center transition-colors ${
+            state.currentStep === 'welcome' || state.currentStep === 'complete'
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-gray-700 hover:bg-gray-600 text-white'
+          }`}
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Previous
+        </button>
+        
+        <button
+          onClick={state.currentStep === 'summary' ? submitVerification : nextStep}
+          disabled={state.currentStep === 'complete'}
+          className={`px-4 py-2 rounded flex items-center transition-colors ${
+            state.currentStep === 'complete'
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : state.currentStep === 'summary'
+                ? 'bg-green-600 hover:bg-green-500 text-white'
+                : 'bg-blue-600 hover:bg-blue-500 text-white'
+          }`}
+        >
+          {state.currentStep === 'summary' ? 'Submit' : 'Next'}
+          {state.currentStep !== 'summary' && <ArrowRight size={20} className="ml-2" />}
+        </button>
+      </div>
     </div>
   );
 } 

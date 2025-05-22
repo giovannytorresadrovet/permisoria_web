@@ -1,246 +1,351 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  UploadSimple, 
-  File, 
-  FilePdf, 
-  ImageSquare, 
-  X, 
-  Check, 
-  Warning 
-} from 'phosphor-react';
-import { Button } from 'keep-react';
+import React, { useState, useRef, ChangeEvent } from 'react';
+import { FilePlus, TrashSimple, Spinner, Check, X, Info, Warning } from 'phosphor-react';
 
 interface DocumentUploadProps {
-  documentType?: string;
-  onUploadComplete: (document: any) => void;
-  maxSizeMB?: number;
-  allowedTypes?: string[];
+  /**
+   * Function to handle a successful document upload
+   */
+  onUploadSuccess: (result: {
+    id: string;
+    filename: string;
+    contentType: string;
+    fileType: string;
+    fileSize: number;
+    contentHash: string;
+    storagePath: string;
+    url: string;
+  }) => void;
+  
+  /**
+   * Function to handle upload errors
+   */
+  onUploadError?: (error: Error) => void;
+  
+  /**
+   * The business owner ID to associate with the document
+   */
   ownerId: string;
+  
+  /**
+   * The document category (e.g., 'identification', 'address_proof')
+   */
+  category: string;
+  
+  /**
+   * Max file size in bytes (defaults to 5MB)
+   */
+  maxFileSize?: number;
+  
+  /**
+   * Allowed file types (array of mime types)
+   */
+  allowedFileTypes?: string[];
+  
+  /**
+   * Text to display when hovering over the upload area
+   */
+  hoverText?: string;
+  
+  /**
+   * Initial state text
+   */
+  placeholderText?: string;
+  
+  /**
+   * Whether the control is disabled
+   */
+  disabled?: boolean;
+  
+  /**
+   * Custom CSS class
+   */
+  className?: string;
 }
 
-export default function DocumentUpload({
-  documentType = "Identity",
-  onUploadComplete,
-  maxSizeMB = 5,
-  allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'],
-  ownerId
-}: DocumentUploadProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * A component for uploading documents in the verification process
+ */
+export const DocumentUpload: React.FC<DocumentUploadProps> = ({
+  onUploadSuccess,
+  onUploadError,
+  ownerId,
+  category,
+  maxFileSize = 5 * 1024 * 1024, // 5MB default
+  allowedFileTypes = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/heic',
+    'image/heif'
+  ],
+  hoverText = 'Drop file here',
+  placeholderText = 'Drag and drop a file or click to select',
+  disabled = false,
+  className = ''
+}) => {
+  // Refs and state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
-  // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file selection via click
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      validateAndUploadFile(files[0]);
+    }
+  };
+  
+  // Handle file drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (disabled) return;
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      validateAndUploadFile(files[0]);
+    }
+  };
+  
+  // Validate and upload the file
+  const validateAndUploadFile = (file: File) => {
+    // Reset previous errors
     setError(null);
     
-    if (!e.target.files || e.target.files.length === 0) {
-      setSelectedFile(null);
-      return;
-    }
-    
-    const file = e.target.files[0];
-    
     // Check file type
-    if (!allowedTypes.includes(file.type)) {
-      setError(`Invalid file type. Allowed types: ${allowedTypes.map(t => t.split('/')[1]).join(', ')}`);
-      setSelectedFile(null);
+    if (!allowedFileTypes.includes(file.type)) {
+      const error = `Invalid file type. Allowed types: ${allowedFileTypes.join(', ')}`;
+      setError(error);
+      if (onUploadError) onUploadError(new Error(error));
       return;
     }
     
     // Check file size
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      setError(`File is too large. Maximum size is ${maxSizeMB}MB`);
-      setSelectedFile(null);
+    if (file.size > maxFileSize) {
+      const error = `File too large. Maximum size: ${Math.round(maxFileSize / 1024 / 1024)}MB`;
+      setError(error);
+      if (onUploadError) onUploadError(new Error(error));
       return;
     }
     
-    setSelectedFile(file);
-  };
-  
-  // Trigger file input click
-  const handleBrowse = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
-  // Handle file upload
-  const handleUpload = async () => {
-    if (!selectedFile || !ownerId) return;
+    // Set file as selected before upload
+    setUploadedFile(file);
     
+    // Upload the file
+    uploadFile(file);
+  };
+  
+  // Upload the file to the server
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
     
     try {
-      // Mock upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const newProgress = prev + Math.floor(Math.random() * 20);
-          return newProgress >= 95 ? 95 : newProgress;
-        });
-      }, 300);
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
       
-      // TODO: In a real implementation, you would call your actual file upload API here
-      // For this template, we'll simulate an upload with a timeout
+      // Upload the file with progress tracking
+      const xhr = new XMLHttpRequest();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(progress);
+        }
+      });
       
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      // Listen for completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const response = JSON.parse(xhr.responseText);
+          onUploadSuccess(response);
+        } else {
+          const errorMsg = `Upload failed with status: ${xhr.status}`;
+          setError(errorMsg);
+          setUploadedFile(null);
+          if (onUploadError) onUploadError(new Error(errorMsg));
+        }
+        setIsUploading(false);
+      });
       
-      // Construct a fake document object for now
-      const uploadedDocument = {
-        id: `doc-${Date.now()}`,
-        ownerId: ownerId,
-        documentType: documentType,
-        fileName: selectedFile.name,
-        fileType: selectedFile.type,
-        fileSize: selectedFile.size,
-        uploadedAt: new Date().toISOString(),
-        url: URL.createObjectURL(selectedFile) // In a real app, this would be the URL returned by the upload API
-      };
+      // Listen for errors
+      xhr.addEventListener('error', () => {
+        const errorMsg = 'Network error occurred during upload';
+        setError(errorMsg);
+        setUploadedFile(null);
+        if (onUploadError) onUploadError(new Error(errorMsg));
+        setIsUploading(false);
+      });
       
-      // Notify parent component
-      onUploadComplete(uploadedDocument);
-      
-      // Reset state
-      setSelectedFile(null);
-      setIsUploading(false);
-      setUploadProgress(0);
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError('Failed to upload document. Please try again.');
+      // Open and send the request
+      xhr.open('POST', `/api/business-owners/${ownerId}/documents`);
+      xhr.send(formData);
+    } catch (err: any) {
+      setError(err.message || 'Unknown error occurred during upload');
+      setUploadedFile(null);
+      if (onUploadError) onUploadError(err);
       setIsUploading(false);
     }
   };
   
-  // Clear selected file
-  const handleClear = () => {
-    setSelectedFile(null);
+  // Cancel the upload
+  const cancelUpload = () => {
+    setUploadedFile(null);
     setError(null);
+    setIsUploading(false);
+    setUploadProgress(0);
     
-    // Reset file input
+    // Reset the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
   
-  // Get icon based on file type
-  const getFileIcon = () => {
-    if (!selectedFile) return <File size={24} className="text-gray-400" />;
-    
-    if (selectedFile.type.includes('pdf')) {
-      return <FilePdf size={24} className="text-red-400" />;
-    } else if (selectedFile.type.includes('image')) {
-      return <ImageSquare size={24} className="text-blue-400" />;
-    }
-    
-    return <File size={24} className="text-gray-400" />;
+  // Format the file size in a readable way
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
   
   return (
-    <div className="bg-gray-800/50 backdrop-blur rounded-lg p-4 border border-gray-700">
-      <h3 className="text-gray-200 font-medium mb-3">{documentType} Document Upload</h3>
-      
-      {/* Hidden file input */}
-      <input 
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept={allowedTypes.join(',')}
-        className="hidden"
-      />
-      
-      {!selectedFile ? (
-        // Upload area when no file is selected
-        <div 
-          onClick={handleBrowse}
-          className="border-2 border-dashed border-gray-600 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
-        >
-          <UploadSimple size={36} className="text-gray-400 mb-3" />
-          <p className="text-gray-300 mb-1">Click to browse or drop a file here</p>
-          <p className="text-xs text-gray-500">
-            Allowed types: {allowedTypes.map(t => t.split('/')[1]).join(', ')} (Max {maxSizeMB}MB)
-          </p>
-          
-          {error && (
-            <div className="mt-3 flex items-center text-red-400 text-sm">
-              <Warning size={16} className="mr-1" />
-              <span>{error}</span>
+    <div className={`${className}`}>
+      {/* File drop area */}
+      <div
+        className={`relative border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors ${
+          isDragging ? 'bg-blue-500/10 border-blue-500' : 
+          error ? 'bg-red-500/10 border-red-500' : 
+          isUploading ? 'bg-amber-500/10 border-amber-500' : 
+          uploadedFile ? 'bg-green-500/10 border-green-500' : 
+          'bg-gray-800 border-gray-600 hover:border-gray-500'
+        } ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+        onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!disabled) setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+      >
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+          accept={allowedFileTypes.join(',')}
+          className="hidden"
+          disabled={disabled || isUploading}
+        />
+        
+        {/* Display states */}
+        {isUploading ? (
+          // Uploading state
+          <div className="text-center">
+            <Spinner size={32} weight="bold" className="text-amber-500 animate-spin mx-auto mb-2" />
+            <p className="text-sm text-gray-300 mb-1">Uploading file...</p>
+            <div className="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+              <div
+                className="bg-amber-500 h-2.5 rounded-full"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
             </div>
-          )}
-        </div>
-      ) : (
-        // Selected file details
-        <div className="border border-gray-700 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              {getFileIcon()}
-              <div className="ml-3 overflow-hidden">
-                <p className="text-gray-200 truncate max-w-[200px]">{selectedFile.name}</p>
-                <p className="text-xs text-gray-500">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-            </div>
+            <p className="text-xs text-gray-400">{uploadProgress}% complete</p>
             
+            {/* Cancel button */}
             <button
-              onClick={handleClear}
-              className="text-gray-400 hover:text-red-400"
-              disabled={isUploading}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelUpload();
+              }}
+              className="mt-3 px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white transition-colors"
             >
-              <X size={20} />
+              Cancel
             </button>
           </div>
-          
-          {isUploading ? (
-            // Upload progress bar
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-400">Uploading...</span>
-                <span className="text-xs text-gray-400">{uploadProgress}%</span>
-              </div>
-              <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                <motion.div 
-                  className="h-full bg-blue-600 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${uploadProgress}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-              
-              {uploadProgress === 100 && (
-                <div className="mt-2 flex items-center text-green-400 text-sm">
-                  <Check size={16} className="mr-1" />
-                  <span>Upload complete!</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Upload button
-            <Button
-              size="sm"
-              variant="default"
-              onClick={handleUpload}
-              className="mt-4 w-full"
+        ) : uploadedFile ? (
+          // Uploaded file state
+          <div className="text-center">
+            <Check size={32} weight="bold" className="text-green-500 mx-auto mb-2" />
+            <p className="text-sm text-gray-300 mb-1">File uploaded successfully</p>
+            <p className="text-xs text-gray-400 mb-2">{uploadedFile.name}</p>
+            <p className="text-xs text-gray-500">{formatFileSize(uploadedFile.size)}</p>
+          </div>
+        ) : error ? (
+          // Error state
+          <div className="text-center">
+            <X size={32} weight="bold" className="text-red-500 mx-auto mb-2" />
+            <p className="text-sm text-gray-300 mb-1">Upload failed</p>
+            <p className="text-xs text-red-400 mb-3">{error}</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setError(null);
+              }}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white transition-colors"
             >
-              <UploadSimple size={18} className="mr-2" />
-              Upload Document
-            </Button>
-          )}
+              Try Again
+            </button>
+          </div>
+        ) : isDragging ? (
+          // Drag hover state
+          <div className="text-center">
+            <FilePlus size={32} weight="bold" className="text-blue-500 mx-auto mb-2" />
+            <p className="text-sm text-blue-400">{hoverText}</p>
+          </div>
+        ) : (
+          // Initial state
+          <div className="text-center">
+            <FilePlus size={32} weight="bold" className="text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-400">{placeholderText}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              Accepted formats: {allowedFileTypes.map(t => t.split('/')[1]).join(', ')}
+            </p>
+            <p className="text-xs text-gray-500">
+              Max size: {formatFileSize(maxFileSize)}
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Information about required documents */}
+      <div className="mt-3 flex items-start text-xs">
+        <Info size={16} className="text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
+        <p className="text-gray-400">
+          Document must be clear and legible. Make sure all information is visible and not cropped.
+        </p>
+      </div>
+      
+      {/* Warnings based on category */}
+      {category === 'identification' && (
+        <div className="mt-2 flex items-start text-xs">
+          <Warning size={16} className="text-amber-400 mr-2 flex-shrink-0 mt-0.5" />
+          <p className="text-gray-400">
+            ID must not be expired and must show your full name, photo, date of birth, and ID number.
+          </p>
+        </div>
+      )}
+      
+      {category === 'address_proof' && (
+        <div className="mt-2 flex items-start text-xs">
+          <Warning size={16} className="text-amber-400 mr-2 flex-shrink-0 mt-0.5" />
+          <p className="text-gray-400">
+            Document must be recent (within the last 3 months) and clearly show your full name and address.
+          </p>
         </div>
       )}
     </div>
   );
-} 
+};
+
+export default DocumentUpload; 

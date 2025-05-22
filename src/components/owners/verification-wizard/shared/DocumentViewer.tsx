@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   MagnifyingGlassPlus, 
   MagnifyingGlassMinus, 
@@ -195,9 +196,10 @@ export default function DocumentViewer({
               setIsLoading(false);
               setError('Unable to load PDF document');
             }}
+            aria-label={`PDF document: ${fileName}`}
           >
             <p className="text-red-400">
-              Your browser doesn't support PDF viewing. <a href={documentUrl} className="text-blue-400 underline">Download</a> instead.
+              Your browser doesn&apos;t support PDF viewing. <a href={documentUrl} className="text-blue-400 underline">Download</a> instead.
             </p>
           </object>
         ) : actualDocType === 'image' ? (
@@ -209,21 +211,32 @@ export default function DocumentViewer({
               transition: 'transform 0.2s ease-out'
             }}
           >
-            <img
-              src={documentUrl}
-              alt={fileName}
-              className="max-w-full max-h-full object-contain"
+            <div
               style={{ 
                 transform: `scale(${zoom / 100})`,
                 transformOrigin: 'center',
-                transition: 'transform 0.2s ease-out'
+                transition: 'transform 0.2s ease-out',
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                maxWidth: '800px',
+                maxHeight: '600px'
               }}
-              onLoad={() => setIsLoading(false)}
-              onError={() => {
-                setIsLoading(false);
-                setError('Unable to load image');
-              }}
-            />
+            >
+              <Image
+                src={documentUrl}
+                alt={fileName || 'Document image'}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                style={{ objectFit: 'contain' }}
+                priority
+                onLoad={() => setIsLoading(false)}
+                onError={() => {
+                  setIsLoading(false);
+                  setError('Unable to load image');
+                }}
+              />
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-8 text-center">

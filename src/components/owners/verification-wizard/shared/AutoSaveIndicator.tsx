@@ -1,94 +1,112 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { CloudCheck, Warning, CloudArrowUp } from 'phosphor-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CloudCheck, CloudArrowUp, CloudSlash } from 'phosphor-react';
 
 interface AutoSaveIndicatorProps {
-  lastSaved: Date | null;
-  isSaving: boolean;
-  error: string | null;
-  onManualSave?: () => void;
+  /**
+   * Whether there are changes that haven't been saved yet
+   */
+  isDirty: boolean;
+  
+  /**
+   * Whether the auto-save operation is in progress
+   */
+  isAutoSaving: boolean;
+  
+  /**
+   * The timestamp of the last successful save
+   */
+  lastSaved?: Date;
+  
+  /**
+   * Error message if the last save failed
+   */
+  saveError?: string | null;
 }
 
-export default function AutoSaveIndicator({
+export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
+  isDirty,
+  isAutoSaving,
   lastSaved,
-  isSaving,
-  error,
-  onManualSave
-}: AutoSaveIndicatorProps) {
-  // Format time
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  saveError
+}) => {
+  /**
+   * Format the last saved timestamp in a human-readable way
+   */
+  const formatLastSaved = () => {
+    if (!lastSaved) return 'Never saved';
+    
+    const now = new Date();
+    const diffMs = now.getTime() - lastSaved.getTime();
+    
+    // If saved in the last minute, show "Just now"
+    if (diffMs < 60000) {
+      return 'Just now';
+    }
+    
+    // If saved in the last hour, show X minutes ago
+    if (diffMs < 3600000) {
+      const minutes = Math.floor(diffMs / 60000);
+      return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+    }
+    
+    // Otherwise show the time
+    return lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
   return (
-    <div className="flex items-center justify-end text-xs">
-      {error ? (
-        // Error state
-        <motion.div 
-          className="flex items-center text-red-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <Warning size={14} className="mr-1" />
-          <span>Save failed: {error}</span>
-          {onManualSave && (
-            <button
-              type="button"
-              onClick={onManualSave}
-              className="ml-2 px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
-            >
-              Retry
-            </button>
-          )}
-        </motion.div>
-      ) : isSaving ? (
-        // Saving state
-        <motion.div 
-          className="flex items-center text-blue-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
+    <div className="flex items-center gap-2 text-xs">
+      <AnimatePresence mode="wait">
+        {saveError ? (
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="mr-1"
+            key="error"
+            className="flex items-center text-red-500"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <CloudArrowUp size={14} />
+            <CloudSlash size={16} className="mr-1" weight="bold" />
+            <span>Save failed</span>
           </motion.div>
-          <span>Saving...</span>
-        </motion.div>
-      ) : lastSaved ? (
-        // Saved state
-        <motion.div 
-          className="flex items-center text-green-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <CloudCheck size={14} className="mr-1" />
-          <span>Saved at {formatTime(lastSaved)}</span>
-        </motion.div>
-      ) : (
-        // Initial state (no saves yet)
-        <span className="text-gray-500">
-          Verification in progress
-        </span>
-      )}
-      
-      {/* Manual save button (always visible unless already saving) */}
-      {!isSaving && onManualSave && (
-        <button
-          type="button"
-          onClick={onManualSave}
-          className="ml-3 px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
-        >
-          Save Now
-        </button>
-      )}
+        ) : isAutoSaving ? (
+          <motion.div
+            key="saving"
+            className="flex items-center text-blue-500"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <CloudArrowUp size={16} className="mr-1" weight="bold" />
+            <span>Saving...</span>
+          </motion.div>
+        ) : isDirty ? (
+          <motion.div
+            key="dirty"
+            className="flex items-center text-amber-500"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <CloudArrowUp size={16} className="mr-1" weight="duotone" />
+            <span>Unsaved changes</span>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="saved"
+            className="flex items-center text-green-500"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <CloudCheck size={16} className="mr-1" weight="bold" />
+            <span>Saved {lastSaved ? formatLastSaved() : ''}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-} 
+};
+
+export default AutoSaveIndicator; 

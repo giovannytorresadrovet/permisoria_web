@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Tabs, Avatar, Card, Badge, Button } from 'keep-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
   User, 
@@ -11,24 +12,37 @@ import {
   Warning, 
   Clock, 
   X,
-  CalendarCheck
+  CalendarCheck,
+  CheckSquare,
+  Buildings,
+  ClipboardText,
+  IdentificationBadge,
+  ClockClockwise,
+  DotsThreeVertical,
+  UploadSimple,
+  PlusCircle
 } from 'phosphor-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Components
 import ErrorState from '@/components/common/ErrorState';
 import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 import OverviewTab from '@/components/features/business-owners/OverviewTab';
 import DocumentsTab from '@/components/features/business-owners/DocumentsTab';
+import VerificationDetailsTab from '@/components/features/business-owners/VerificationDetailsTab';
+import BusinessesTab from '@/components/features/business-owners/BusinessesTab';
+import NotesTab from '@/components/features/business-owners/NotesTab';
+import AccountAccessTab from '@/components/features/business-owners/AccountAccessTab';
+import HistoryTab from '@/components/features/business-owners/HistoryTab';
 import BusinessOwnerVerificationWizard from '@/components/features/business-owners/verification/BusinessOwnerVerificationWizard';
+import DocumentUploadModal from '@/components/features/business-owners/DocumentUploadModal';
 
 // Define status configuration with icon, color, and action button text
 const statusConfig = {
   VERIFIED: { 
     color: 'success', 
-    icon: <CheckCircle size={16} weight="fill" className="mr-1" />,
-    actionText: 'Already Verified',
-    actionDisabled: true,
+    icon: <CheckCircle size={16} weight="fill" />,
+    actionText: 'View Verification',
+    actionDisabled: false,
     badgeText: 'Verified',
     description: 'This business owner has been verified and can operate within the platform.'
   },
@@ -42,7 +56,7 @@ const statusConfig = {
   },
   PENDING_VERIFICATION: { 
     color: 'warning', 
-    icon: <Clock size={16} weight="fill" className="mr-1" />,
+    icon: <Clock size={16} weight="fill" />,
     actionText: 'Continue Verification',
     actionDisabled: false,
     badgeText: 'Pending Verification',
@@ -50,7 +64,7 @@ const statusConfig = {
   },
   REJECTED: { 
     color: 'error', 
-    icon: <X size={16} weight="fill" className="mr-1" />,
+    icon: <X size={16} weight="fill" />,
     actionText: 'Restart Verification',
     actionDisabled: false,
     badgeText: 'Rejected',
@@ -58,7 +72,7 @@ const statusConfig = {
   },
   NEEDS_INFO: { 
     color: 'warning', 
-    icon: <Warning size={16} weight="fill" className="mr-1" />,
+    icon: <Warning size={16} weight="fill" />,
     actionText: 'Provide Information',
     actionDisabled: false,
     badgeText: 'Needs Information',
@@ -75,7 +89,9 @@ export default function BusinessOwnerDetailPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [certificateId, setCertificateId] = useState(null);
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
   
   // Fetch owner details
   useEffect(() => {
@@ -86,18 +102,53 @@ export default function BusinessOwnerDetailPage() {
       setError(null);
       
       try {
-        const response = await fetch(`/api/business-owners/${id}`);
+        // In a real app, this would be an API call
+        // For demo purposes, we're using a timeout to simulate loading
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch business owner details');
-        }
+        // Mock data
+        const mockOwner = {
+          id: id,
+          firstName: 'Maria',
+          lastName: 'Rodriguez',
+          email: 'maria.rodriguez@example.com',
+          phone: '+1 (555) 123-4567',
+          dateOfBirth: '1985-06-15',
+          taxId: '***-**-1234',
+          idLicenseNumber: '********8976',
+          addressLine1: '123 Calle Sol',
+          addressLine2: 'Apt 4B',
+          city: 'San Juan',
+          state: 'PR',
+          zipCode: '00901',
+          verificationStatus: 'VERIFIED', // VERIFIED, UNVERIFIED, PENDING_VERIFICATION, REJECTED, NEEDS_INFO
+          lastVerifiedAt: '2025-05-10T09:30:00Z',
+          verificationExpiresAt: '2026-05-10T09:30:00Z',
+          registrationDate: '2025-01-15T14:30:00Z',
+          documents: [
+            {
+              id: 'doc-1',
+              name: 'Drivers License.jpg',
+              category: 'identification',
+              uploadedAt: '2025-01-16T10:45:00Z',
+              status: 'VERIFIED'
+            },
+            {
+              id: 'doc-2',
+              name: 'Utility Bill.pdf',
+              category: 'proof_of_address',
+              uploadedAt: '2025-01-16T10:50:00Z',
+              status: 'VERIFIED'
+            }
+          ],
+          certificateId: 'cert-12345'
+        };
         
-        const data = await response.json();
-        setOwner(data);
+        setOwner(mockOwner);
         
-        // Check if the owner has a verification certificate
-        if (data.verificationStatus === 'VERIFIED' && data.certificateId) {
-          setCertificateId(data.certificateId);
+        // Set certificate ID if available
+        if (mockOwner.verificationStatus === 'VERIFIED' && mockOwner.certificateId) {
+          setCertificateId(mockOwner.certificateId);
         }
       } catch (err) {
         console.error('Error fetching business owner:', err);
@@ -124,6 +175,8 @@ export default function BusinessOwnerDetailPage() {
       ...prev,
       verificationStatus: data.finalDecision.status,
       lastVerifiedAt: data.finalDecision.status === 'VERIFIED' ? new Date().toISOString() : null,
+      verificationExpiresAt: data.finalDecision.status === 'VERIFIED' ? 
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null,
       certificateId: data.certificateId || null
     }));
     
@@ -132,11 +185,48 @@ export default function BusinessOwnerDetailPage() {
     }
     
     setIsWizardOpen(false);
+    
+    // If verification is completed, switch to the verification details tab
+    if (data.finalDecision.status === 'VERIFIED') {
+      setActiveTab('verification');
+    }
   };
   
   const handleViewCertificate = () => {
     if (certificateId) {
       window.open(`/api/business-owners/${id}/verification/certificate?id=${certificateId}`, '_blank');
+    }
+  };
+  
+  const handleDocumentUploaded = (newDocument) => {
+    setOwner(prev => ({
+      ...prev,
+      documents: [...(prev.documents || []), newDocument]
+    }));
+    
+    // Switch to documents tab after upload
+    setActiveTab('documents');
+  };
+  
+  const handleQuickAction = (action) => {
+    setIsQuickActionsOpen(false);
+    
+    switch (action) {
+      case 'upload-document':
+        setIsUploadModalOpen(true);
+        break;
+      case 'verification':
+        setIsWizardOpen(true);
+        break;
+      case 'add-business':
+        router.push(`/businesses/create?ownerId=${id}`);
+        break;
+      case 'add-note':
+        setActiveTab('notes');
+        // Would normally also open the add note modal
+        break;
+      default:
+        break;
     }
   };
   
@@ -244,7 +334,7 @@ export default function BusinessOwnerDetailPage() {
                     >
                       <span className="flex items-center">
                         {status.icon}
-                        {status.badgeText}
+                        <span className="ml-1">{status.badgeText}</span>
                       </span>
                     </Badge>
                     
@@ -259,16 +349,77 @@ export default function BusinessOwnerDetailPage() {
               </div>
               
               {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  size="md"
-                  color={owner.verificationStatus === 'VERIFIED' ? 'gray' : 'primary'}
-                  onClick={handleStartVerification}
-                  disabled={status.actionDisabled}
-                >
-                  {status.actionText}
-                </Button>
+              <div className="flex flex-wrap gap-3">
+                {/* Quick actions button (mobile) */}
+                <div className="relative md:hidden">
+                  <Button
+                    size="md"
+                    color="metal"
+                    onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
+                  >
+                    <DotsThreeVertical size={18} className="mr-2" />
+                    Quick Actions
+                  </Button>
+                  
+                  {isQuickActionsOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
+                      <div className="py-1">
+                        <button
+                          className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center"
+                          onClick={() => handleQuickAction('upload-document')}
+                        >
+                          <UploadSimple size={16} className="mr-2" />
+                          Upload Document
+                        </button>
+                        <button
+                          className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center"
+                          onClick={() => handleQuickAction('verification')}
+                        >
+                          <CheckSquare size={16} className="mr-2" />
+                          {status.actionText}
+                        </button>
+                        <button
+                          className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center"
+                          onClick={() => handleQuickAction('add-business')}
+                        >
+                          <PlusCircle size={16} className="mr-2" />
+                          Create Business
+                        </button>
+                        <button
+                          className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center"
+                          onClick={() => handleQuickAction('add-note')}
+                        >
+                          <ClipboardText size={16} className="mr-2" />
+                          Add Note
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
+                {/* Desktop action buttons */}
+                <div className="hidden md:flex gap-3">
+                  <Button
+                    size="md"
+                    color="metal"
+                    onClick={() => setIsUploadModalOpen(true)}
+                  >
+                    <UploadSimple size={18} className="mr-2" />
+                    Upload Document
+                  </Button>
+                  
+                  <Button
+                    size="md"
+                    color={owner.verificationStatus === 'VERIFIED' ? 'success' : 'primary'}
+                    onClick={handleStartVerification}
+                    disabled={status.actionDisabled}
+                  >
+                    <CheckSquare size={18} className="mr-2" />
+                    {status.actionText}
+                  </Button>
+                </div>
+                
+                {/* Certificate button (if verified) */}
                 {certificateId && (
                   <Button
                     size="md"
@@ -287,6 +438,12 @@ export default function BusinessOwnerDetailPage() {
             {status.description && (
               <div className={`mt-4 p-3 rounded-md bg-${status.color === 'success' ? 'green' : status.color === 'warning' ? 'yellow' : status.color === 'error' ? 'red' : 'blue'}-900/20`}>
                 <p className={`text-sm text-${status.color === 'success' ? 'green' : status.color === 'warning' ? 'yellow' : status.color === 'error' ? 'red' : 'blue'}-400`}>
+                  <span className="mr-1">
+                    {status.color === 'success' ? <CheckCircle size={14} weight="fill" /> : 
+                     status.color === 'warning' ? <Warning size={14} weight="fill" /> : 
+                     status.color === 'error' ? <X size={14} weight="fill" /> : 
+                     <CheckCircle size={14} weight="fill" />}
+                  </span>
                   {status.description}
                 </p>
               </div>
@@ -304,7 +461,7 @@ export default function BusinessOwnerDetailPage() {
           value={activeTab}
           onTabChange={setActiveTab}
         >
-          <Tabs.List className="border-b border-gray-700 p-1">
+          <Tabs.List className="border-b border-gray-700 p-1 overflow-x-auto flex">
             <Tabs.Tab 
               value="overview"
               icon={<User size={18} />}
@@ -312,10 +469,40 @@ export default function BusinessOwnerDetailPage() {
               Overview
             </Tabs.Tab>
             <Tabs.Tab 
+              value="verification"
+              icon={<CheckSquare size={18} />}
+            >
+              Verification
+            </Tabs.Tab>
+            <Tabs.Tab 
               value="documents"
               icon={<Documents size={18} />}
             >
               Documents
+            </Tabs.Tab>
+            <Tabs.Tab 
+              value="businesses"
+              icon={<Buildings size={18} />}
+            >
+              Businesses
+            </Tabs.Tab>
+            <Tabs.Tab 
+              value="notes"
+              icon={<ClipboardText size={18} />}
+            >
+              Notes
+            </Tabs.Tab>
+            <Tabs.Tab 
+              value="account"
+              icon={<IdentificationBadge size={18} />}
+            >
+              Account
+            </Tabs.Tab>
+            <Tabs.Tab 
+              value="history"
+              icon={<ClockClockwise size={18} />}
+            >
+              History
             </Tabs.Tab>
           </Tabs.List>
           
@@ -338,6 +525,27 @@ export default function BusinessOwnerDetailPage() {
               </motion.div>
             )}
             
+            {activeTab === "verification" && (
+              <motion.div
+                key="verification"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Tabs.Content value="verification" className="p-6">
+                  <VerificationDetailsTab 
+                    ownerId={id} 
+                    verificationStatus={owner.verificationStatus}
+                    lastVerifiedAt={owner.lastVerifiedAt}
+                    verificationExpiresAt={owner.verificationExpiresAt}
+                    certificateId={certificateId}
+                    onStartVerification={handleStartVerification}
+                  />
+                </Tabs.Content>
+              </motion.div>
+            )}
+            
             {activeTab === "documents" && (
               <motion.div
                 key="documents"
@@ -355,6 +563,65 @@ export default function BusinessOwnerDetailPage() {
                 </Tabs.Content>
               </motion.div>
             )}
+            
+            {activeTab === "businesses" && (
+              <motion.div
+                key="businesses"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Tabs.Content value="businesses" className="p-6">
+                  <BusinessesTab 
+                    ownerId={id}
+                    ownerName={`${owner.firstName} ${owner.lastName}`}
+                  />
+                </Tabs.Content>
+              </motion.div>
+            )}
+            
+            {activeTab === "notes" && (
+              <motion.div
+                key="notes"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Tabs.Content value="notes" className="p-6">
+                  <NotesTab ownerId={id} />
+                </Tabs.Content>
+              </motion.div>
+            )}
+            
+            {activeTab === "account" && (
+              <motion.div
+                key="account"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Tabs.Content value="account" className="p-6">
+                  <AccountAccessTab ownerId={id} />
+                </Tabs.Content>
+              </motion.div>
+            )}
+            
+            {activeTab === "history" && (
+              <motion.div
+                key="history"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Tabs.Content value="history" className="p-6">
+                  <HistoryTab ownerId={id} />
+                </Tabs.Content>
+              </motion.div>
+            )}
           </AnimatePresence>
         </Tabs>
       </motion.div>
@@ -366,6 +633,14 @@ export default function BusinessOwnerDetailPage() {
         ownerId={id}
         ownerData={owner}
         onVerificationComplete={handleVerificationComplete}
+      />
+      
+      {/* Document Upload Modal */}
+      <DocumentUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        ownerId={id}
+        onSuccess={handleDocumentUploaded}
       />
     </motion.div>
   );

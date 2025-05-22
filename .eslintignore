@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+.next/
+out/
+build/
+dist/
+
+# Template files that shouldn't be linted
+project-docs/
+backup/
+
+# Generated files
+*.d.ts
+next-env.d.ts 

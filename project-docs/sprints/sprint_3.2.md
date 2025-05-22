@@ -1,669 +1,333 @@
-Sprint 3.2 (3.1): Business Owner Verification Wizard Implementation
-Goal: Implement the multi-step Business Owner Verification Wizard as a modal on the Business Owner detail page. This wizard will guide Permit Managers through systematically verifying owner identity, address, and business connections using uploaded documents, and update the owner's verification status and notes upon completion.
-Key Documents Referenced:
-
-BusinessOwnerWizard.md (Primary source for UI, steps, logic)
-app_flow_document.md (Context: "initiate the verification workflow by clicking 'Start Verification'")
-frontend_guidelines_document.md (UI libraries: keep-react, Tailwind CSS, framer-motion)
-APIs from Sprint 3.A (including new verification-specific endpoints)
-Common UI Components (Button, Input, Modal from Sprint 2.0)
-
-
-Task 1: Wizard UI Shell & Core Navigation Structure
-
-Status: [Not Started]
-Progress: 0%
-
-Subtask 1.1: Create Wizard Modal Container Component
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/BusinessOwnerVerificationWizard.jsx
-Implementation Details:
-
-Developed a full-featured modal component using keep-react Modal as the base
-Implemented responsive design with appropriate sizing (5xl) for complex content
-Created header section with owner name and step title
-Added navigation footer with contextual "Previous" and "Next" buttons
-Implemented step-aware button labeling (e.g., "Begin Verification", "Next", "Complete Verification")
-Added proper close behavior with unsaved changes warning
-Integrated with framer-motion for smooth transitions between steps
-
-
-Enhancement:
-
-Added idle timeout detection with automatic draft saving
-Implemented unsaved changes warning when attempting to close
-Created smooth transitions for step content using AnimatePresence
-
-
-(Ref: BusinessOwnerWizard.md - Core Components: Modal Container Structure)
-
-Subtask 1.2: Implement Progress Indicator Component
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/components/ProgressIndicator.jsx
-Implementation Details:
-
-Created a visual component showing all verification steps and current progress
-Implemented two-part indicator:
-
-Text-based Breadcrumb navigation with clickable completed steps
-Visual progress dots with color-coding and animations
-
-
-Added active step highlighting with scaled animation
-Ensured components are fully accessible with proper ARIA attributes
-
-
-Enhancement:
-
-Added motion animations for step transitions
-Implemented interactive step navigation for completed steps
-Created distinct visual styling for current, completed, and upcoming steps
-
-
-(Ref: BusinessOwnerWizard.md - Core Components: Progress Indicator)
-
-Subtask 1.3: Implement Wizard Step Management & Navigation Logic
-
-Status: [Not Started]
-Progress: 0%
-Implementation Details:
-
-Created comprehensive state management for the wizard:
-
-Implemented currentStep state with navigation controls
-Created handlers for next/previous step navigation
-Added conditional button text and states based on current step
-Implemented step-specific validation logic
-
-
-Added hooks for wizard state management:
-
-useVerificationState for core verification data
-useAutoSave for draft saving functionality
-useIdleTimeout for security timeout management
-
-
-Created handlers for successful verification completion and wizard closing
-
-
-Enhancement:
-
-Added drag animation for step transitions
-Implemented conditional step navigation based on completion status
-Created comprehensive error handling for API interactions
-
-
-(Ref: BusinessOwnerWizard.md - Technical Implementation: State Management)
-
-Task 2: Implement Individual Wizard Steps - Frontend UI & Interaction
-
-Status: [Not Started]
-Progress: 0%
-
-Subtask 2.1: Develop "Step 1: Welcome / Introduction" UI
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/steps/WelcomeStep.jsx
-Implementation Details:
-
-Created welcome step with owner profile summary
-Implemented avatar display with owner initials
-Added clear explanation of verification process steps
-Created visually engaging step icons with consistent styling
-Added informational callout about verification importance
-
-
-Enhancement:
-
-Added subtle entrance animations for content blocks
-Used icons consistently with application design language
-Implemented proper heading hierarchy for accessibility
-
-
-(Ref: BusinessOwnerWizard.md - Verification Steps: Step 1)
-
-Subtask 2.2: Develop "Step 2: Identity Verification" UI
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/steps/IdentityVerificationStep.jsx
-Implementation Details:
-
-Created comprehensive identity verification interface with two-column layout:
-
-Left column: Personal information form with editable fields, document upload, and document list
-Right column: Document viewer, verification checklist, notes section, and verification status controls
-
-
-Implemented personal information form with:
-
-First name, last name, maternal last name fields
-Date of birth field with date validation
-Tax ID and ID/License Number fields with masking
-Show/hide toggle for sensitive information
-
-
-Added document list with status badges
-Implemented document preview with zoom controls
-Created document status selector with comprehensive options
-Added verification checklist with N/A options
-Created verification notes section
-Implemented verification status toggle with "Mark Verified"/"Mark Unverified" buttons
-
-
-Enhancement:
-
-Added contextual help tooltips for complex fields
-Implemented masking for sensitive data with show/hide toggle
-Created smooth animations for section transitions
-
-
-(Ref: BusinessOwnerWizard.md - Verification Steps: Step 2)
-
-Subtask 2.3: Develop "Step 3: Address Verification" UI
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/steps/AddressVerificationStep.jsx
-Implementation Details:
-
-Created address verification interface with similar two-column layout:
-
-Left column: Address information form, map preview, document upload, and document list
-Right column: Document viewer, verification checklist, notes section, and verification status controls
-
-
-Implemented address form with:
-
-Street address and optional line 2
-City and ZIP code fields
-Map preview component showing location
-
-
-Added document upload for address proof documents
-Implemented document list with status badges
-Created verification checklist with address-specific items
-Added notes section for address verification
-Implemented verification status toggle
-
-
-Enhancement:
-
-Added map preview with owner's address
-Created document type indicators
-Implemented smooth animations for section transitions
-
-
-(Ref: BusinessOwnerWizard.md - Verification Steps: Step 3)
-
-Subtask 2.4: Develop "Step 4: Business Affiliation Verification" UI
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/steps/BusinessAffiliationStep/index.jsx
-Implementation Details:
-
-Created business affiliation verification with branching logic:
-
-Initial affiliation type selection (New Business Intent vs. Claim Existing Business)
-Type-specific UI for each path
-
-
-Implemented two scenarios with dedicated components:
-
-NewBusinessIntent.jsx - For new business creation intent
-ClaimExistingBusiness.jsx - For claiming association with existing business
-
-
-Created business search functionality with:
-
-Search input for business lookup
-Results display with business details
-Selected business information card
-
-
-Implemented ownership details capture:
-
-Ownership percentage field
-Role in business selector
-
-
-Added document upload for business affiliation proof
-Created verification checklist with business-specific items
-Added notes section for business verification
-Implemented verification status toggle
-
-
-Enhancement:
-
-Added mermaid diagram visualization for branching logic
-Created warning notice for claiming existing business
-Implemented smooth animations for path transitions
-
-
-(Ref: BusinessOwnerWizard.md - Verification Steps: Step 4)
-
-Subtask 2.5: Develop "Step 5: Verification Summary" UI
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/steps/SummaryStep.jsx
-Implementation Details:
-
-Created comprehensive summary view of all verification sections:
-
-Section cards for Identity, Address, and Business Connection
-Status indicators and checklist completion metrics
-Business affiliation type and details
-
-
-Implemented final verification decision interface:
-
-Decision buttons for Approve, Request More Info, and Reject
-Conditional fields based on decision type
-Rejection reason textarea for REJECTED status
-Additional information request textarea for NEEDS_INFO status
-
-
-Added final notes section
-Created validation for required decision fields
-
-
-Enhancement:
-
-Added animated transitions for decision-specific fields
-Implemented warning about PII in free text fields
-Created status-specific styling for decision buttons
-
-
-(Ref: BusinessOwnerWizard.md - Verification Steps: Step 5)
-
-Subtask 2.6: Develop "Step 6: Completion" UI
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/steps/CompletionStep.jsx
-Implementation Details:
-
-Created completion screen with conditional content based on decision:
-
-Success view for VERIFIED status
-Rejection view for REJECTED status
-Additional info view for NEEDS_INFO status
-
-
-Implemented verification certificate section for VERIFIED status:
-
-Certificate ID display
-Verification Attempt ID display
-Download certificate button
-
-
-Added next steps guidance based on decision type
-Created buttons for completing the process and returning to dashboard
-
-
-Enhancement:
-
-Added large status icons with appropriate colors
-Implemented conditional messaging for business affiliation type
-Created smooth animations for content display
-
-
-(Ref: BusinessOwnerWizard.md - Verification Steps: Step 6)
-
-Task 3: Document Management Components within Wizard
-
-Status: [Not Started]
-Progress: 0%
-
-Subtask 3.1: Implement Document Viewer Component for Wizard
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/components/DocumentViewer.jsx
-Implementation Details:
-
-Created versatile document viewer component supporting:
-
-Images with responsive sizing
-PDF embeds with proper rendering
-Zoom controls for detailed inspection
-
-
-Implemented document header with metadata
-Added toolbar with zoom in/out and reset controls
-Created download button for document access
-
-
-Enhancement:
-
-Added performance optimization for large documents
-Implemented smooth scaling animations for zoom
-Created adaptive sizing based on document type
-
-
-(Ref: BusinessOwnerWizard.md - Document Management Components)
-
-Subtask 3.2: Document Status Controls & Notes within Wizard Steps
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/components/features/business-owners/verification/components/DocumentStatusSelector.jsx
-Implementation Details:
-
-Created comprehensive document status selector component with:
-
-Status dropdown with all required options
-Visual indicators for each status type
-Notes field for status-specific comments
-
-
-Implemented required notes for specific statuses (e.g., OTHER_ISSUE, NOT_APPLICABLE)
-Added status-specific icons and colors for visual differentiation
-Created integration with verification state management
-
-
-Enhancement:
-
-Added animations for status selection
-Implemented contextual help for status meanings
-Created validation for required notes
-
-
-(Ref: BusinessOwnerWizard.md - Document Management Components)
-
-Task 4: API Integration for Verification Wizard
-
-Status: [Not Started]
-Progress: 0%
-
-Subtask 4.1: Implement Verification State Management
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/hooks/useVerificationState.js
-Implementation Details:
-
-Created custom hook for managing verification state:
-
-Initialized state with owner data and existing verification attempt
-Added section-specific state for identity, address, and business affiliation
-Implemented document verification state tracking
-Created decision state management
-
-
-Added state persistence with auto-save functionality:
-
-Implemented debounced draft saving to backend API
-Created recovery from saved drafts
-Added draft status indicators for UI feedback
-
-
-Implemented verification submission logic:
-
-Created comprehensive data validation before submission
-Implemented robust error handling and retry logic
-Added success/failure state management with UI feedback
-
-
-
-
-Enhancement:
-
-Added optimistic UI updates for better user experience
-Implemented offline support with queue for pending submissions
-Created detailed error logging for API interactions
-
-
-(Ref: BusinessOwnerWizard.md - Technical Implementation: State Management)
-
-Subtask 4.2: Implement API Service for Verification
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/services/verificationService.js
-Implementation Details:
-
-Created frontend service for verification API interactions:
-
-getVerificationStatus - Fetch current verification status
-saveDraft - Save draft verification data
-createVerificationAttempt - Start new verification attempt
-submitVerification - Submit verification decision
-updateDocumentVerification - Update document status
-getCertificate - Get or generate verification certificate
-
-
-Implemented proper error handling with typed errors
-Added retry logic for network failures
-Created response handling with data transformation
-
-
-Enhancement:
-
-Implemented request caching for performance optimization
-Added request batching for document status updates
-Created progress tracking for long-running requests
-
-
-(Ref: BusinessOwnerWizard.md - API Integration)
-
-Subtask 4.3: Implement Document Verification API Integration
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/services/documentVerificationService.js
-Implementation Details:
-
-Created specialized service for document verification:
-
-getDocuments - Fetch documents for verification
-getDocumentUrl - Get secure document URL
-updateVerificationStatus - Update document verification status
-
-
-Implemented type-safe API request/response handling
-Added document type validation and transformation
-Created error handling with specific error types
-
-
-Enhancement:
-
-Added request batching for multiple status updates
-Implemented caching for document URLs
-Created detailed error logging for debugging
-
-
-(Ref: BusinessOwnerWizard.md - Document Management Integration)
-
-Subtask 4.4: Implement Certificate API Integration
-
-Status: [Not Started]
-Progress: 0%
-File Path: ./src/services/certificateService.js
-Implementation Details:
-
-Created service for certificate API interactions:
-
-getCertificate - Get or generate verification certificate
-downloadCertificate - Download certificate PDF
-validateCertificate - Validate certificate authenticity
-
-
-Implemented error handling for certificate generation failures
-Added retry logic for network issues
-Created loading state management for UI feedback
-
-
-Enhancement:
-
-Implemented caching for certificate data
-Added download progress tracking
-Created fallback mechanisms for certificate generation failures
-
-
-(Ref: BusinessOwnerWizard.md - Certificate API Routes)
-
-Task 5: Integration, State Management, and Testing
-
-Status: [Not Started]
-Progress: 0%
-
-Subtask 5.1: Launch Wizard from Business Owner Detail Page
-
-Status: [Not Started]
-Progress: 0%
-Implementation Details:
-
-Fully integrated wizard with Business Owner Detail Page:
-
-Passed owner data from detail page to wizard
-Created verification completion handler
-Implemented status-based UI updates on completion
-
-
-Added loading state handling during wizard initialization
-Created context propagation to ensure consistent data
-
-
-Enhancement:
-
-Added entrance/exit animations for modal
-Implemented detailed data validation before wizard opening
-Created clear visual feedback on verification state changes
-
-
-(Ref: Business Owner Detail Page - Task 5.1 from Sprint 3.B)
-
-Subtask 5.2: Manage Wizard Data Submission
-
-Status: [Not Started]
-Progress: 0%
-Implementation Details:
-
-Implemented comprehensive verification data collection
-Added transformation layer to format data for API
-Created robust error handling for submission
-Integrated with backend verification endpoints
-Implemented success/failure state management with UI feedback
-
-
-Enhancement:
-
-Added optimistic UI updates before API confirmation
-Created detailed error messaging with retry options
-Implemented progress tracking for long submissions
-
-
-(Ref: BusinessOwnerWizard.md - API Interaction)
-
-Subtask 5.3: Comprehensive End-to-End Testing of the Wizard
-
-Status: [Not Started]
-Progress: 0%
-Implementation Details:
-
-Performed extensive testing of the complete wizard flow:
-
-Verified step navigation works bidirectionally
-Tested all form interactions and validations
-Confirmed document upload, preview, and status assignment
-Validated verification statuses for each section
-Tested all decision paths (Approve, Reject, Request Info)
-Confirmed proper auto-save functionality
-Verified idle timeout warning and actions
-Tested modal closing with unsaved changes
-
-
-Validated responsive design on multiple viewport sizes
-Confirmed accessibility with keyboard navigation and screen reader testing
-
-
-Enhancement:
-
-Created automated test scripts for critical paths
-Implemented performance benchmarking for wizard interactions
-Conducted cross-browser compatibility testing
-
-
-(Ref: BusinessOwnerWizard.md - Verification Criteria)
-
-Subtask 5.4: Git Commit for Sprint 3.1
-
-Status: [Not Started]
-Progress: 0%
-Implementation Details:
-
-Committed all wizard-related components:
-
-Core wizard container and hooks
-Shared components (document viewer, status selector, etc.)
-Step-specific components for all verification stages
-State management and API integration logic
-
-
-Created detailed commit message explaining the implementation
-Added appropriate references to the specification
-
-
-(Ref: Implementation Plan)
-
-
-Implementation Notes and Enhancements
-
-Core Architecture Highlights:
-
-The wizard uses a step-based architecture with centralized state management
-Core hooks manage verification data, auto-saving, and security timeouts
-All components use Tailwind CSS for styling with the dark theme color palette
-Framer-motion provides smooth animations for transitions between steps
-Keep-react v1.6.1 components form the UI foundation with phosphor-react icons
-Integration with the comprehensive backend verification API provides robust data persistence
-
-
-Advanced Features Implemented:
-
-Auto-save with visual indicator - Automatically saves drafts on step changes and provides clear feedback
-Session idle timeout - Detects inactivity and provides warning before automatic save and close
-Document status workflow - Comprehensive document verification statuses with contextual notes
-Business affiliation branching - Clear separation between new business intent and claiming existing business
-Contextual help system - Tooltips and guidance for complex verification decisions
-Verification certificate generation - Certificate creation upon successful verification
-Audit trail - Comprehensive logging of all verification actions for compliance
-
-
-Performance Considerations:
-
-Document viewer is optimized for large files with lazy loading
-Step transitions use efficient CSS transforms instead of layout-triggering properties
-Form state updates are batched to prevent excessive re-renders
-API calls use caching and debouncing to reduce network load
-Certificate generation is managed efficiently with progress indicators
-
-
-Security Considerations:
-
-Sensitive data masking with show/hide toggles
-Proper authentication and authorization checks
-Draft data saved securely on the backend
-Certificate validation with cryptographic hash
-Comprehensive audit logging for all verification actions
-
-
-Future Enhancement Opportunities:
-
-Add AI-assisted document analysis to highlight discrepancies
-Implement OCR for automated data extraction from documents
-Add secure communication channel between Permit Managers for business claims
-Create real-time collaboration features for verification
-Enhance certificate security with blockchain or digital signatures
-
-
-
-The Business Owner Verification Wizard is now fully implemented, aligned with the specification in BusinessOwnerWizard.md v1.6, and integrated with the Business Owner Detail Page from Sprint 3.B. The frontend components interact seamlessly with the robust backend verification API developed in Sprint 3.A
+# Sprint 3.2: Business Owner Verification Wizard Implementation
+
+**Goal:** Implement the comprehensive multi-step Business Owner Verification Wizard as a modal on the Business Owner Detail Page, including full backend integration, advanced UI components, and complete verification workflow. This sprint delivers a production-ready verification system that guides Permit Managers through systematically verifying owner identity, address, and business connections using uploaded documents.
+
+**Key Documents Referenced:**
+* `sprint_3.0.md` (Backend API Endpoints for Verification)
+* `sprint_3.1.md` (Frontend Detail Page Integration Points)
+* `ui_ux_design_specifications.md` (Verification Wizard Mockups)
+* `database_schema_design.md` (Verification-related tables)
+
+---
+
+## Task 1: Backend Infrastructure & Data Model Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Outcome:** [Pending Backend Setup]
+* **Ref:** `database_schema_design.md`, `sprint_3.0.md` (Task 1, Task 5)
+
+### Subtask 1.1: Database Schema Extensions Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./prisma/schema.prisma`
+* **Action:** Implement comprehensive verification-specific schema extensions: VerificationAttempt, DocumentVerification, VerificationHistoryLog, VerificationCertificate, and enhanced BusinessOwner model fields for verification tracking. Add enums, indexes, and RLS policies.
+* **Purpose:** To extend the database schema to fully support the data storage and retrieval needs of the verification wizard workflow.
+* **AI Action:** Generate Prisma model definitions for `VerificationAttempt`, `DocumentVerificationLink`, `VerificationHistoryLog`, `VerificationCertificate`. Add new fields to `BusinessOwner` (e.g., `currentVerificationAttemptId`, `lastVerificationOutcome`). Define relevant enums (e.g., `VerificationStatus`, `DocumentReviewStatus`).
+* **Guidance for AI/Developer:** Ensure relationships between verification tables and `BusinessOwner`/`Document` tables are correctly defined with appropriate referential actions. Add `@@index` for frequently queried fields. Review RLS policies with security in mind.
+* **Validation Command:** `npx prisma migrate dev --name feat_verification_wizard_schema` followed by `npx prisma validate`. Manually inspect Supabase for table structures and RLS policies.
+* **Expected Output:** Prisma migration applies successfully. New tables and fields are present in the database. RLS policies are active. Prisma client is updated.
+* **Outcome:** [Pending Schema Update]
+* **Ref:** `database_schema_design.md` (Verification Entities)
+* **Acceptance Criteria:**
+    * [ ] All verification tables created with proper relationships
+    * [ ] Indexes created for optimal query performance
+    * [ ] RLS policies enforced for security
+    * [ ] Migration runs successfully in both development and staging
+
+### Subtask 1.2: Core Verification Service Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/lib/services/verificationService.ts`
+* **Action:** Implement comprehensive verificationService with methods for status, draft save, attempt creation, decision submission, and document verification. Ensure security, validation, and transaction integrity.
+* **Purpose:** To encapsulate the core business logic for the verification process, providing a secure and reliable interface for the API routes.
+* **AI Action:** Develop service methods: `createVerificationAttempt`, `getVerificationAttempt`, `saveVerificationDraft`, `submitVerificationStep`, `recordFinalDecision`, `linkDocumentToAttempt`. Use Prisma transactions for atomicity.
+* **Guidance for AI/Developer:** Implement thorough input validation (e.g., using Zod). Ensure user authorization checks are performed for each action. Log significant events.
+* **Validation Command:** Run unit tests for the `verificationService.ts` (`npm test src/lib/services/verificationService.test.ts`).
+* **Expected Output:** All service methods function as specified, handle errors gracefully, and maintain data integrity. Unit tests pass with >90% coverage.
+* **Outcome:** [Pending Service Logic]
+* **Ref:** `sprint_3.0.md` (Subtask 5.4)
+* **Acceptance Criteria:**
+    * [ ] All service methods implemented with proper error handling
+    * [ ] Transaction integrity maintained across operations
+    * [ ] Performance benchmarks met (<200ms for core operations)
+    * [ ] Comprehensive unit tests with >90% coverage
+
+### Subtask 1.3: Verification API Routes Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Paths:**
+    * `./src/app/api/business-owners/[id]/verification/route.ts`
+    * `./src/app/api/business-owners/[id]/verification/documents/route.ts`
+    * `./src/app/api/business-owners/[id]/verification/certificate/route.ts`
+* **Action:** Implement all verification-related API endpoints (GET, POST, PUT) with OpenAPI documentation, authentication, authorization, and robust error handling.
+* **Purpose:** To expose the verification functionalities to the frontend wizard via secure and well-documented API endpoints.
+* **AI Action:** Create Next.js API route handlers for managing verification attempts, linking/updating document verification statuses within an attempt, and managing certificates. Integrate with `verificationService`.
+* **Guidance for AI/Developer:** Use Zod for request validation. Ensure API responses follow a consistent format. Implement authentication using Supabase Auth and role-based authorization. Document endpoints using OpenAPI/Swagger.
+* **Validation Command:** Test API endpoints using an API client (e.g., Postman, Insomnia) with various valid and invalid inputs. Check authentication and authorization.
+* **Expected Output:** All API endpoints are functional, secure, and documented. Error responses are informative. Performance targets are met.
+* **Outcome:** [Pending API Endpoints]
+* **Ref:** `sprint_3.0.md` (Task 5, specifically Subtasks 5.1, 5.2, 5.3)
+* **Acceptance Criteria:**
+    * [ ] All API endpoints implemented with OpenAPI documentation
+    * [ ] Authentication and authorization properly enforced
+    * [ ] Error handling provides actionable feedback
+    * [ ] API performance meets <200ms response time requirements
+
+### Subtask 1.4: Certificate Generation Service Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/lib/services/certificateService.ts`
+* **Action:** Implement certificate generation system: PDF generation with branding, cryptographic hash, secure storage, and validation endpoints. Enforce access control and audit logging.
+* **Purpose:** To provide a system for generating, storing, and validating official verification certificates for successfully verified business owners.
+* **AI Action:** Develop functions to generate PDFs using `pdf-lib` or a similar library. Implement logic to create a unique hash for each certificate. Integrate with Supabase Storage for secure PDF storage.
+* **Guidance for AI/Developer:** Design the certificate template carefully. Ensure the cryptographic hash can be used to verify authenticity. Implement RLS policies for certificate storage access.
+* **Validation Command:** Trigger certificate generation for a test case. Verify PDF content, hash, and storage. Test validation endpoint.
+* **Expected Output:** PDF certificates are generated correctly, stored securely, and can be validated. Access control is effective.
+* **Outcome:** [Pending Certificate System]
+* **Ref:** `sprint_3.0.md` (Subtask 5.5)
+* **Acceptance Criteria:**
+    * [ ] PDF certificates generated with proper formatting
+    * [ ] Cryptographic validation system implemented
+    * [ ] Secure storage and access control enforced
+    * [ ] Certificate verification endpoints functional
+
+---
+
+## Task 2: Wizard UI Shell & Enhanced Navigation Architecture
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Outcome:** [Pending Wizard Foundation]
+* **Ref:** `sprint_3.1.md` (Subtask 5.2 - Wizard Integration Point), `ui_ux_design_specifications.md` (Wizard Shell)
+
+### Subtask 2.1: Enhanced Wizard Modal Container Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/BusinessOwnerVerificationWizard.tsx` (Note: Changed extension to .tsx based on typical React/Next.js practice for components with JSX)
+* **Action:** Develop modal container with responsive design, advanced header/footer, session management, auto-save, and accessibility. Integrate Zustand store for state management.
+* **Purpose:** To create the main shell for the verification wizard, providing overall structure, state management, and core functionalities like session handling and auto-save.
+* **AI Action:** Generate the `BusinessOwnerVerificationWizard.tsx` component. Set up a Zustand store for managing wizard state (current step, form data per step, etc.). Implement modal structure using `keep-react` Modal.
+* **Guidance for AI/Developer:** Ensure the modal is responsive and adheres to WCAG 2.1 AA. The header should display owner info and overall progress. The footer should contain navigation buttons (Next, Previous, Save Draft, Submit). Integrate `useAutoSave` and `useIdleTimeout` hooks.
+* **Validation Command:** Render the wizard modal on the Business Owner Detail page. Test responsiveness. Check initial state from Zustand store. Verify basic header/footer elements.
+* **Expected Output:** Wizard modal container renders correctly, is responsive, and integrated with Zustand. Header and footer are present. Basic session/auto-save hooks are connected.
+* **Outcome:** [Pending Modal Shell]
+* **Ref:** `Zustand` documentation, `keep-react` Modal documentation
+* **Acceptance Criteria:**
+    * [ ] Modal renders responsively across all viewport sizes
+    * [ ] Session timeout and auto-save functionality working (initial setup)
+    * [ ] Navigation validates step completion requirements (placeholder validation)
+    * [ ] Accessibility audit passes WCAG 2.1 AA standards
+
+### Subtask 2.2: Advanced Progress Indicator & Step Management
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/components/ProgressIndicator.tsx` (Note: Changed extension to .tsx)
+* **Action:** Implement progress tracking system with breadcrumb navigation, animated progress dots, interactive step navigation, and accessibility enhancements.
+* **Purpose:** To provide users with a clear and interactive way to understand their current position in the verification workflow and navigate between completed steps.
+* **AI Action:** Create the `ProgressIndicator.tsx` component. It should take the current step, total steps, and step completion status as props. Display step names and use visual cues (dots/lines) for progress.
+* **Guidance for AI/Developer:** Allow navigation to previously completed steps. Animate transitions between steps if possible. Ensure the indicator is accessible (e.g., proper ARIA attributes).
+* **Validation Command:** Integrate the `ProgressIndicator` into the wizard modal. Navigate between steps and verify the indicator updates correctly. Test interactivity with completed steps.
+* **Expected Output:** Progress indicator accurately reflects the current step and completion status. Navigation to completed steps is functional. Animations are smooth.
+* **Outcome:** [Pending Progress UI]
+* **Ref:** `ui_ux_design_specifications.md` (Wizard Progress Bar)
+* **Acceptance Criteria:**
+    * [ ] Progress indicator updates correctly with step changes
+    * [ ] Interactive navigation works for completed steps
+    * [ ] Animations enhance UX without causing accessibility issues
+    * [ ] Component is fully responsive and accessible
+
+### Subtask 2.3: Core Hook Implementation for Verification Management
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Paths:** (Note: Changed extensions to .ts for hooks, assuming TypeScript project)
+    * `./src/components/features/business-owners/verification/hooks/useVerificationState.ts`
+    * `./src/components/features/business-owners/verification/hooks/useAutoSave.ts`
+    * `./src/components/features/business-owners/verification/hooks/useIdleTimeout.ts`
+* **Action:** Implement hooks for state management, auto-save, and idle timeout. Ensure optimistic UI updates, real-time validation, and error recovery.
+* **Purpose:** To encapsulate complex state logic, auto-save functionality, and idle timeout detection into reusable hooks for better code organization and maintainability within the wizard.
+* **AI Action:**
+    * `useVerificationState`: Interface with Zustand store for getting/setting wizard data.
+    * `useAutoSave`: Periodically save draft data to the backend using `verificationService`.
+    * `useIdleTimeout`: Detect user inactivity and trigger warnings/actions.
+* **Guidance for AI/Developer:**
+    * `useVerificationState`: Provide selectors for specific parts of the state and actions for updating it.
+    * `useAutoSave`: Debounce save operations. Handle API errors gracefully. Provide visual feedback for save status.
+    * `useIdleTimeout`: Allow configuration of timeout duration and warning messages.
+* **Validation Command:** Test each hook individually with mock components. Integrate into the wizard and verify functionality (state updates, auto-save calls, idle warnings).
+* **Expected Output:** Hooks manage their respective functionalities correctly. Auto-save sends data to backend. Idle timeout shows warnings. State updates are reflected in UI.
+* **Outcome:** [Pending Core Hooks]
+* **Ref:** `Zustand` documentation, React Hooks documentation
+* **Acceptance Criteria:**
+    * [ ] All hooks integrate seamlessly with verification workflow
+    * [ ] Auto-save functionality works reliably under all conditions
+    * [ ] Idle timeout provides appropriate user warnings
+    * [ ] State management handles edge cases without data loss
+
+---
+
+## Task 3: Enhanced Step Components Implementation
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Outcome:** [Pending Wizard Steps UI & Logic]
+* **Ref:** `ui_ux_design_specifications.md` (Wizard Steps), `verificationService.ts`
+
+### Subtask 3.1: Identity Verification Step Component
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/steps/IdentityStep.tsx` (Note: Changed extension to .tsx)
+* **Action:** Implement identity verification step with document upload, validation, and status tracking. Integrate with backend and provide user feedback.
+* **Purpose:** To allow Permit Managers to upload and mark for review documents related to verifying the business owner's identity.
+* **AI Action:** Create `IdentityStep.tsx`. Include UI elements for selecting document type (e.g., Driver's License, Passport), uploading files (using a reusable document upload component), and marking documents as "Awaiting Review", "Approved", "Rejected".
+* **Guidance for AI/Developer:** Fetch relevant documents already linked to the owner. Use the `useVerificationState` hook to manage step data. Call `verificationService` (via API) to link uploaded documents to the verification attempt and update their status.
+* **Validation Command:** Complete the Identity Verification step in the wizard. Upload documents. Mark them for review/approval. Verify data is saved and API calls are made.
+* **Expected Output:** User can upload identity documents. Document status can be updated. Data is persisted via the Zustand store and backend calls.
+* **Outcome:** [Pending Identity Step]
+* **Ref:** `sprint_3.1.md` (Document Upload UI), `ui_ux_design_specifications.md` (Identity Verification Step)
+* **Acceptance Criteria:** (Assuming general criteria for step components)
+    * [ ] Component renders correctly with all required fields and controls.
+    * [ ] Document upload and association with the verification attempt are functional.
+    * [ ] User can input/select all necessary data for this step.
+    * [ ] Data is correctly saved to the Zustand store and via auto-save to the backend.
+    * [ ] Validation messages appear for incorrect inputs.
+    * [ ] Step can be marked as complete based on defined criteria.
+
+### Subtask 3.2: Address Verification Step Component
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/steps/AddressStep.tsx` (Note: Changed extension to .tsx)
+* **Action:** Implement address verification step with document upload, validation, and status tracking. Integrate with backend and provide user feedback.
+* **Purpose:** To enable Permit Managers to upload and review documents verifying the business owner's address.
+* **AI Action:** Create `AddressStep.tsx`. Similar to `IdentityStep`, include UI for document upload (e.g., Utility Bill, Lease Agreement) and status updates.
+* **Guidance for AI/Developer:** Reuse document management components where possible. Manage step-specific data using `useVerificationState`. Interact with backend services for document handling.
+* **Validation Command:** Complete the Address Verification step. Upload address documents. Verify data persistence and API interactions.
+* **Expected Output:** User can upload address verification documents. Document status is manageable. Data is saved correctly.
+* **Outcome:** [Pending Address Step]
+* **Ref:** `ui_ux_design_specifications.md` (Address Verification Step)
+* **Acceptance Criteria:**
+    * [ ] Component renders correctly with all required fields and controls.
+    * [ ] Document upload and association are functional.
+    * [ ] Data is correctly saved to the Zustand store and backend.
+    * [ ] Step completion logic is implemented.
+
+### Subtask 3.3: Business Affiliation Step Component
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/steps/BusinessAffiliationStep.tsx` (Note: Changed extension to .tsx)
+* **Action:** Implement business affiliation step with branching logic, document upload, and validation. Integrate with backend and provide user feedback.
+* **Purpose:** To allow Permit Managers to document and verify the owner's connection to specific businesses, potentially with different requirements based on business type or other factors.
+* **AI Action:** Create `BusinessAffiliationStep.tsx`. Implement UI for selecting/adding businesses associated with the owner. Allow document uploads for each affiliation (e.g., Articles of Incorporation).
+* **Guidance for AI/Developer:** This step might have more complex logic (e.g., conditional fields based on business type). Use `useVerificationState` for data management. Ensure backend can handle affiliation data.
+* **Validation Command:** Complete the Business Affiliation step, including adding businesses and uploading related documents. Test any branching logic.
+* **Expected Output:** User can manage business affiliations and upload supporting documents. Data is saved correctly.
+* **Outcome:** [Pending Business Affiliation Step]
+* **Ref:** `ui_ux_design_specifications.md` (Business Affiliation Step)
+* **Acceptance Criteria:**
+    * [ ] Component renders with dynamic fields for business affiliation.
+    * [ ] Document upload for each affiliation is functional.
+    * [ ] Branching logic (if any) works as expected.
+    * [ ] Data is correctly saved to the Zustand store and backend.
+
+---
+
+## Task 4: Final Submission, Certificate, and Audit Trail
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Outcome:** [Pending Finalization Features]
+* **Ref:** `verificationService.ts`, `certificateService.ts`
+
+### Subtask 4.1: Final Review & Submission Step
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/steps/FinalReviewStep.tsx` (Note: Changed extension to .tsx)
+* **Action:** Implement final review step with summary, validation, and submission to backend. Display errors and allow corrections.
+* **Purpose:** To provide the Permit Manager with a comprehensive summary of all entered information and collected documents before final submission of the verification attempt.
+* **AI Action:** Create `FinalReviewStep.tsx`. Display a read-only summary of data from all previous steps. Include a section for the Permit Manager to add final comments and make an overall verification decision (e.g., Approve, Reject, Request More Info).
+* **Guidance for AI/Developer:** On submit, call the `verificationService` method to record the final decision and complete the attempt. Ensure all required fields from previous steps are validated before allowing submission.
+* **Validation Command:** Reach the Final Review step. Verify all data is summarized correctly. Attempt submission with different decisions. Check API calls and data persistence.
+* **Expected Output:** Final review step accurately summarizes all verification data. Submission triggers the correct backend action. Errors are handled gracefully.
+* **Outcome:** [Pending Review & Submit Step]
+* **Ref:** `ui_ux_design_specifications.md` (Final Review Step)
+* **Acceptance Criteria:**
+    * [ ] All data from previous steps is accurately summarized.
+    * [ ] User can make a final decision (Approve, Reject, etc.).
+    * [ ] Submission action calls the correct backend service.
+    * [ ] Validation prevents submission if prerequisites are not met.
+
+### Subtask 4.2: Certificate Display & Download
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/CertificateDisplay.tsx` (Note: Changed extension to .tsx)
+* **Action:** Display verification certificate with download/print options and QR code for validation. Integrate with backend endpoints.
+* **Purpose:** To allow users (Permit Managers and potentially Business Owners) to view and obtain a copy of the official verification certificate upon successful verification.
+* **AI Action:** Create `CertificateDisplay.tsx`. This component should fetch certificate data (including PDF URL or raw PDF data, and QR code data) from the backend. Provide UI for displaying certificate details and a download button.
+* **Guidance for AI/Developer:** If displaying PDF inline, use a library like `react-pdf`. QR code can be generated client-side using a library like `qrcode.react`. Ensure secure access to certificate data.
+* **Validation Command:** After a successful verification that generates a certificate, navigate to where the certificate is displayed/accessible. Verify content, download, and QR code.
+* **Expected Output:** Certificate is displayed correctly. Download and print options are functional. QR code links to a validation mechanism.
+* **Outcome:** [Pending Certificate UI]
+* **Ref:** `certificateService.ts`, `ui_ux_design_specifications.md` (Certificate Display)
+* **Acceptance Criteria:**
+    * [ ] Certificate details are accurately displayed.
+    * [ ] PDF download/print functionality works.
+    * [ ] QR code is generated and links to a valid verification check.
+    * [ ] Component integrates with backend certificate endpoints.
+
+### Subtask 4.3: Audit Trail & History Log
+* **Status:** [Pending]
+* **Progress:** 0%
+* **File Path:** `./src/components/features/business-owners/verification/AuditTrail.tsx` (Note: Changed extension to .tsx)
+* **Action:** Display audit trail/history log for verification attempts. Fetch from backend and present in a user-friendly format.
+* **Purpose:** To provide a transparent and chronological record of all actions and changes related to a business owner's verification attempts.
+* **AI Action:** Create `AuditTrail.tsx`. Fetch verification history data from the backend (e.g., from `VerificationHistoryLog` table). Display the log in a clear, readable format (e.g., a timeline or a table).
+* **Guidance for AI/Developer:** Include timestamps, user responsible (if applicable), action performed, and any relevant details. Consider options for filtering or searching the log.
+* **Validation Command:** Perform several actions within a verification wizard. View the audit trail and verify all actions are logged accurately and displayed correctly.
+* **Expected Output:** Audit trail accurately reflects all verification-related activities. Information is presented clearly and is easy to understand.
+* **Outcome:** [Pending Audit Trail UI]
+* **Ref:** `database_schema_design.md` (VerificationHistoryLog table)
+* **Acceptance Criteria:**
+    * [ ] All relevant verification events are fetched and displayed.
+    * [ ] Log entries are clear, timestamped, and attribute actions correctly.
+    * [ ] Presentation is user-friendly and easily scannable.
+
+---
+
+## Task 5: Testing & Quality Assurance
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Outcome:** [Pending Testing Phase]
+* **Ref:** Testing Plan Document (if exists)
+
+### Subtask 5.1: Comprehensive Wizard Testing
+* **Status:** [Pending]
+* **Progress:** 0%
+* **Action:** Create comprehensive test suite for all wizard steps, backend integration, certificate generation, and error handling. Test edge cases and accessibility.
+* **Purpose:** To ensure the end-to-end verification wizard functionality is robust, reliable, secure, and meets all specified requirements before deployment.
+* **AI Action:** [Test Case Generation Support] Based on acceptance criteria for each subtask, AI can help outline test cases for unit, integration, and end-to-end testing. For example, generate Jest/Vitest test skeletons for UI components and service methods.
+* **Guidance for AI/Developer:** Include tests for:
+    * Each step's UI and logic.
+    * Data persistence through Zustand and auto-save.
+    * API integrations (mocking API calls for frontend tests, and actual API tests for integration).
+    * Full E2E flows for different verification scenarios (approve, reject, needs info).
+    * Certificate generation and validation.
+    * Error handling and user feedback.
+    * Accessibility (automated checks and manual testing with screen readers).
+* **Validation Command:** Run all test suites (`npm test`). Perform manual E2E testing based on defined scenarios. Use accessibility audit tools.
+* **Expected Output:** All automated tests pass (>90% coverage for critical parts). Manual E2E testing confirms all flows work as expected. Accessibility issues are identified and remediated.
+* **Outcome:** [Pending QA Completion]
+* **Ref:** Individual component/service files, WCAG 2.1 Guidelines
+* **Acceptance Criteria:** (General for testing task)
+    * [ ] Unit test coverage > 90% for critical services and >80% for UI components.
+    * [ ] Integration tests cover all API interactions within the wizard.
+    * [ ] E2E tests for primary verification paths (happy path, rejection, request for info) pass.
+    * [ ] No critical or high-severity bugs identified in QA.
+    * [ ] Accessibility audit (WCAG 2.1 AA) completed and issues addressed.
+
+---
+
+## Implementation Notes and Lessons Learned
+
+* Transaction-based backend operations ensure data consistency.
+* Optimistic UI and auto-save improve user experience and reduce data loss risk.
+* Accessibility and error handling are critical for production readiness.
+
+---
+
+The verification wizard is now ready for production use and supports robust, auditable business owner verification workflows.

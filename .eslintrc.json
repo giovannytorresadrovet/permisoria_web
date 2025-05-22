@@ -1,0 +1,21 @@
+{
+  "root": true,
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-var": "error",
+    "prefer-const": "warn"
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "public/",
+    "out/",
+    "build/",
+    "dist/",
+    "coverage/",
+    "project-docs/page-design-templates/"
+  ]
+} 

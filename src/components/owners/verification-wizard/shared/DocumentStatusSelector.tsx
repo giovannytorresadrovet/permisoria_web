@@ -1,149 +1,224 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { 
-  CheckCircle, 
-  XCircle, 
+  Check, 
+  X, 
   Warning, 
+  FileSearch, 
   Clock, 
-  Question, 
-  CaretDown 
+  Asterisk,
+  Question
 } from 'phosphor-react';
-import { DocumentStatus } from '@/hooks/verification/useVerificationState';
 
-type StatusType = DocumentStatus['status'];
+// Status options for document verification
+export const DOCUMENT_STATUSES = {
+  PENDING: {
+    value: 'PENDING',
+    label: 'Pending Review',
+    color: 'bg-amber-500',
+    icon: Clock
+  },
+  VERIFIED: {
+    value: 'VERIFIED',
+    label: 'Verified',
+    color: 'bg-green-500',
+    icon: Check
+  },
+  UNREADABLE: {
+    value: 'UNREADABLE',
+    label: 'Unreadable',
+    color: 'bg-red-500',
+    icon: FileSearch
+  },
+  EXPIRED: {
+    value: 'EXPIRED',
+    label: 'Expired',
+    color: 'bg-red-500',
+    icon: X
+  },
+  INCONSISTENT_DATA: {
+    value: 'INCONSISTENT_DATA',
+    label: 'Inconsistent Data',
+    color: 'bg-red-500',
+    icon: Warning
+  },
+  SUSPECTED_FRAUD: {
+    value: 'SUSPECTED_FRAUD',
+    label: 'Suspected Fraud',
+    color: 'bg-red-900',
+    icon: Warning
+  },
+  OTHER_ISSUE: {
+    value: 'OTHER_ISSUE',
+    label: 'Other Issue',
+    color: 'bg-gray-500',
+    icon: Question
+  },
+  NOT_APPLICABLE: {
+    value: 'NOT_APPLICABLE',
+    label: 'Not Applicable',
+    color: 'bg-gray-400',
+    icon: Asterisk
+  }
+};
 
-interface StatusOption {
-  value: StatusType;
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-}
+// Type for the document status
+export type DocumentStatus = keyof typeof DOCUMENT_STATUSES;
 
 interface DocumentStatusSelectorProps {
-  value: StatusType;
-  onChange: (status: StatusType) => void;
-  onNoteRequired?: () => void;
-  requiresNoteFor?: StatusType[];
+  /**
+   * The current status of the document
+   */
+  status: DocumentStatus;
+  
+  /**
+   * Notes related to the document verification
+   */
+  notes?: string;
+  
+  /**
+   * Called when the status changes
+   */
+  onStatusChange: (status: DocumentStatus) => void;
+  
+  /**
+   * Called when notes are updated
+   */
+  onNotesChange?: (notes: string) => void;
+  
+  /**
+   * Whether to display notes for this document (defaults to true)
+   */
+  showNotes?: boolean;
+  
+  /**
+   * Whether the control is disabled
+   */
+  disabled?: boolean;
+  
+  /**
+   * Custom CSS class for the component
+   */
+  className?: string;
 }
 
-export default function DocumentStatusSelector({
-  value = 'PENDING',
-  onChange,
-  requiresNoteFor = ['OTHER_ISSUE', 'REJECTED', 'NEEDS_REVIEW'],
-  onNoteRequired
-}: DocumentStatusSelectorProps) {
+/**
+ * A component for selecting a document verification status with optional notes
+ */
+export const DocumentStatusSelector: React.FC<DocumentStatusSelectorProps> = ({
+  status,
+  notes = '',
+  onStatusChange,
+  onNotesChange,
+  showNotes = true,
+  disabled = false,
+  className = ''
+}) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [tempNotes, setTempNotes] = useState(notes);
   
-  const toggleDropdown = () => setIsOpen(!isOpen);
+  // Get the current status configuration
+  const currentStatus = DOCUMENT_STATUSES[status] || DOCUMENT_STATUSES.PENDING;
   
-  const handleSelect = (status: StatusType) => {
-    onChange(status);
+  // Handle status selection
+  const handleStatusSelect = (newStatus: DocumentStatus) => {
     setIsOpen(false);
-    
-    // Check if this status requires a note and call the callback
-    if (requiresNoteFor.includes(status) && onNoteRequired) {
-      onNoteRequired();
+    if (newStatus !== status) {
+      onStatusChange(newStatus);
     }
   };
   
-  // Define status options
-  const statusOptions: StatusOption[] = [
-    {
-      value: 'PENDING',
-      label: 'Pending Review',
-      icon: <Clock size={18} />,
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-400/10'
-    },
-    {
-      value: 'VERIFIED',
-      label: 'Verified',
-      icon: <CheckCircle size={18} />,
-      color: 'text-green-400',
-      bgColor: 'bg-green-400/10'
-    },
-    {
-      value: 'REJECTED',
-      label: 'Rejected',
-      icon: <XCircle size={18} />,
-      color: 'text-red-400',
-      bgColor: 'bg-red-400/10'
-    },
-    {
-      value: 'NEEDS_REVIEW',
-      label: 'Needs Further Review',
-      icon: <Question size={18} />,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-400/10'
-    },
-    {
-      value: 'OTHER_ISSUE',
-      label: 'Other Issue',
-      icon: <Warning size={18} />,
-      color: 'text-orange-400',
-      bgColor: 'bg-orange-400/10'
+  // Handle notes blur (save on blur)
+  const handleNotesBlur = () => {
+    if (onNotesChange && tempNotes !== notes) {
+      onNotesChange(tempNotes);
     }
-  ];
+  };
   
-  // Get the currently selected option
-  const selectedOption = statusOptions.find(opt => opt.value === value) || statusOptions[0];
+  const StatusIcon = currentStatus.icon;
   
   return (
-    <div className="relative">
-      {/* Selected status button */}
-      <button
-        type="button"
-        onClick={toggleDropdown}
-        className="relative w-full flex items-center justify-between bg-gray-800 border border-gray-700 rounded p-2 hover:bg-gray-750 transition-colors"
-      >
-        <div className="flex items-center">
-          <div className={`${selectedOption.color} mr-2`}>
-            {selectedOption.icon}
-          </div>
-          <span className="text-sm text-gray-200">{selectedOption.label}</span>
-        </div>
-        <CaretDown size={16} className={`text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
-      </button>
-      
-      {/* Dropdown */}
-      {isOpen && (
-        <motion.div 
-          className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded-md shadow-lg overflow-hidden"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.15 }}
+    <div className={`flex flex-col ${className}`}>
+      {/* Status selector dropdown */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          disabled={disabled}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-md ${
+            currentStatus.color
+          } text-white transition-colors ${
+            disabled ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'
+          }`}
         >
-          <ul className="py-1">
-            {statusOptions.map((option) => (
-              <li key={option.value}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(option.value)}
-                  className={`w-full flex items-center px-3 py-2 text-sm ${
-                    option.value === value 
-                      ? `${option.bgColor} ${option.color}` 
-                      : 'text-gray-300 hover:bg-gray-700'
-                  } transition-colors`}
-                >
-                  <div className={`${option.color} mr-2`}>
-                    {option.icon}
-                  </div>
-                  <span>{option.label}</span>
-                  {requiresNoteFor.includes(option.value) && (
-                    <span className="ml-auto text-xs text-gray-500 italic">
-                      (requires note)
+          <span className="flex items-center">
+            <StatusIcon size={18} className="mr-2" weight="bold" />
+            {currentStatus.label}
+          </span>
+          <svg
+            className={`ml-2 w-5 h-5 transition-transform ${
+              isOpen ? 'transform rotate-180' : ''
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+        
+        {/* Dropdown menu */}
+        {isOpen && !disabled && (
+          <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+            <ul className="py-1 max-h-60 overflow-auto">
+              {Object.entries(DOCUMENT_STATUSES).map(([key, option]) => (
+                <li key={key}>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusSelect(key as DocumentStatus)}
+                    className={`w-full text-left px-3 py-2 flex items-center hover:bg-gray-700 transition-colors ${
+                      key === status ? 'bg-gray-700' : ''
+                    }`}
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${option.color}`}
+                    >
+                      <option.icon size={14} weight="bold" className="text-white" />
                     </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
+                    <span className="text-white">{option.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      
+      {/* Notes textarea */}
+      {showNotes && (
+        <div className="mt-2">
+          <textarea
+            value={tempNotes}
+            onChange={(e) => setTempNotes(e.target.value)}
+            onBlur={handleNotesBlur}
+            disabled={disabled}
+            placeholder="Add verification notes..."
+            className={`w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              disabled ? 'opacity-60 cursor-not-allowed' : ''
+            }`}
+            rows={3}
+          />
+        </div>
       )}
     </div>
   );
-} 
+};
+
+export default DocumentStatusSelector; 

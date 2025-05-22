@@ -3,4 +3,4 @@
 ## Usage
 The number of times rules is used as context
 
-* cursor_project_rules.mdc: 0 
+* cursor_project_rules.mdc: 4 

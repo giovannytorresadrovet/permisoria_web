@@ -95,7 +95,7 @@ export const useAuth = () => {
       console.log('🔐 [Auth] Cleaning up auth subscription');
       subscription.unsubscribe();
     };
-  }, [setUserSession, setLoading, setError]);
+  }, [setUserSession, setLoading, setError, supabase.auth]);
 
   /**
    * Sign up a new user
