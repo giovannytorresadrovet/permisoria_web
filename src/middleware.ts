@@ -7,6 +7,15 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
+  // DEVELOPMENT MODE: Bypass authentication checks in development
+  const isDevelopmentMode = process.env.NODE_ENV === 'development';
+  const bypassAuth = isDevelopmentMode;
+  
+  if (bypassAuth) {
+    console.log('🔐 [Middleware] Development mode - bypassing auth checks');
+    return response;
+  }
+
   // Check if the request is coming from the login page
   const referer = request.headers.get('referer') || '';
   const isFromLogin = referer.includes('/auth/login');

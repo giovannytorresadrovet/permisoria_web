@@ -1,0 +1,413 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with BusinessOwner relationships
+model User {
+  id                    String      @id @default(uuid()) // Maps to Supabase auth.users.id
+  email                 String      @unique
+  role                  String      // From existing auth implementation
+  
+  // Enhanced profile fields
+  firstName             String?
+  lastName              String?
+  phone                 String?
+  
+  // Business Owner relationships
+  managedBusinessOwners BusinessOwner[] @relation("ManagedOwners")
+  businessOwnerProfile  BusinessOwner?  @relation("OwnerProfile")
+  
+  // Note relationships
+  authoredNotes         Note[]
+  
+  // Timestamps
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  @@map("users") // Maps to existing auth schema if needed
+}
+
+// BusinessOwner model
+model BusinessOwner {
+  id                    String      @id @default(uuid())
+  userId                String?     @unique // For linked user accounts
+  assignedManagerId     String?     // Permit Manager who manages this owner
+  
+  // Personal information
+  firstName             String
+  lastName              String
+  paternalLastName      String?     // For Latin American naming conventions
+  maternalLastName      String?     // For Latin American naming conventions
+  dateOfBirth           DateTime?
+  
+  // Contact information
+  email                 String      @unique
+  secondaryEmail        String?     // From 2026 module enhancement
+  phone                 String?
+  
+  // Identification (encrypted sensitive fields)
+  taxId                 String?     @db.Text // Encrypted at application level
+  idLicenseNumber       String?     @db.Text // Encrypted at application level
+  idType                String?     // Type of ID document
+  idIssuingCountry      String?
+  idIssuingState        String?
+  nationality           String?     // From 2026 enhancement
+  
+  // Address information
+  addressLine1          String?
+  addressLine2          String?
+  city                  String?
+  state                 String?
+  zipCode               String?
+  
+  // Status tracking
+  verificationStatus    String      @default("UNVERIFIED") // UNVERIFIED, PENDING_VERIFICATION, VERIFIED, REJECTED, NEEDS_INFO
+  accountStatus         String      @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+  lastVerifiedAt        DateTime?
+  verificationExpiresAt DateTime?
+  registrationDate      DateTime    @default(now())
+  
+  // Enhanced tracking fields
+  riskScore             Float?      // 0-100 scale
+  lastVerificationAttemptDate DateTime?
+  verificationNotes     String?     @db.Text
+  communicationPreferences Json?    // Channels & frequency
+  preferredLanguage     String      @default("en") // en, es
+  
+  // Verification tracking
+  currentVerificationAttemptId String?
+  version               Int         @default(1) // For audit versioning
+  previousVersionId     String?     // History tracking
+  
+  // Soft delete
+  deletedAt             DateTime?
+  
+  // Timestamps
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  // Relationships
+  assignedManager       User?       @relation("ManagedOwners", fields: [assignedManagerId], references: [id])
+  user                  User?       @relation("OwnerProfile", fields: [userId], references: [id])
+  documents             Document[]
+  businesses            BusinessAssociation[]
+  verificationAttempts  VerificationAttempt[]
+  currentVerificationAttempt VerificationAttempt? @relation("CurrentVerification", fields: [currentVerificationAttemptId], references: [id])
+  notes                 Note[]
+  activityLogs          ActivityLog[]
+  
+  // Indices for performance
+  @@index([assignedManagerId])
+  @@index([verificationStatus])
+  @@index([email])
+  @@index([assignedManagerId, verificationStatus]) // For filtered list queries
+  @@index([riskScore]) // For 2026 enhancements
+  @@index([verificationExpiresAt]) // For expiration tracking
+}
+
+// Document model
+model Document {
+  id                    String    @id @default(uuid())
+  // Polymorphic associations
+  ownerId               String?
+  businessId            String?
+  permitId              String?
+  
+  // File metadata
+  filename              String
+  originalFilename      String    // Store original name separately
+  fileType              String
+  contentType           String
+  fileSize              Int
+  storagePath           String    // Path in Supabase Storage bucket
+  
+  // Document categorization
+  category              String    // identification, proof_of_address, business_license, tax_document, other
+  subcategory           String?   // More granular classification
+  tags                  String[]  // For advanced filtering and OCR metadata
+  
+  // Verification status
+  verificationStatus    String?   // VERIFIED, UNREADABLE, EXPIRED, INCONSISTENT_DATA, SUSPECTED_FRAUD, OTHER_ISSUE, NOT_APPLICABLE
+  verificationNotes     String?   @db.Text
+  verificationDate      DateTime?
+  verifiedBy            String?   // User ID who verified
+  
+  // Security and integrity
+  contentHash           String?   // SHA-256 hash for integrity verification
+  encryptionStatus      String?   // ENCRYPTED, UNENCRYPTED for sensitive docs
+  
+  // Optional expiry
+  expiryDate            DateTime?
+  expiryNotificationSent Boolean  @default(false)
+  
+  // Version control
+  version               Int       @default(1)
+  previousVersionId     String?
+  
+  // Soft delete
+  deletedAt             DateTime?
+  
+  // Timestamps
+  uploadedAt            DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  // Relationships
+  owner                 BusinessOwner? @relation(fields: [ownerId], references: [id])
+  documentVerifications DocumentVerification[]
+  
+  // Indices
+  @@index([ownerId])
+  @@index([category])
+  @@index([verificationStatus])
+  @@index([expiryDate]) // For expiration tracking
+  @@index([ownerId, category]) // For tab filtering
+  @@index([tags]) // For tag-based search
+}
+
+// VerificationAttempt model
+model VerificationAttempt {
+  id                    String      @id @default(uuid())
+  businessOwnerId       String
+  businessOwner         BusinessOwner @relation(fields: [businessOwnerId], references: [id])
+  initiatedBy           String      // User ID of Permit Manager
+  initiatedAt           DateTime    @default(now())
+  completedAt           DateTime?
+  
+  // Decision tracking
+  decision              VerificationDecision?
+  decisionReason        String?     @db.Text
+  certificateId         String?     @unique
+  
+  // Wizard state management
+  sections              Json        @default("{}") // Stores section-specific verification states
+  draftData             Json?       // Latest auto-saved draft data
+  
+  // Wizard step progress
+  currentStep           Int         @default(1)
+  completedSteps        Int[]       // Array of completed step numbers
+  
+  // Enhanced tracking
+  lastUpdated           DateTime    @default(now()) @updatedAt
+  timeSpentMinutes      Int?        // For analytics
+  
+  // Relationships
+  documentVerifications DocumentVerification[]
+  historyLog            VerificationHistoryLog[]
+  certificate           VerificationCertificate?
+  managedOwners         BusinessOwner[] @relation("CurrentVerification")
+  
+  @@index([businessOwnerId])
+  @@index([initiatedBy])
+  @@index([decision])
+  @@index([businessOwnerId, completedAt]) // For verification history
+}
+
+enum VerificationDecision {
+  VERIFIED
+  REJECTED
+  NEEDS_INFO
+}
+
+// DocumentVerification model
+model DocumentVerification {
+  id                    String      @id @default(uuid())
+  verificationId        String
+  verification          VerificationAttempt @relation(fields: [verificationId], references: [id])
+  documentId            String
+  document              Document    @relation(fields: [documentId], references: [id])
+  
+  // Enhanced status tracking
+  status                DocumentVerificationStatus
+  notes                 String?     @db.Text
+  verifiedBy            String      // User ID
+  verifiedAt            DateTime    @default(now())
+  
+  // Checklist support
+  checklistItems        Json?       // Dynamic checklist items and their status
+  discrepanciesFound    String[]    // List of identified issues
+  
+  @@unique([verificationId, documentId])
+  @@index([documentId])
+  @@index([status])
+}
+
+enum DocumentVerificationStatus {
+  PENDING
+  VERIFIED
+  ACCEPTABLE
+  UNREADABLE
+  EXPIRED
+  INCONSISTENT_DATA
+  SUSPECTED_FRAUD
+  OTHER_ISSUE
+  NOT_APPLICABLE
+  AWAITING_REPLACEMENT
+}
+
+// VerificationHistoryLog model
+model VerificationHistoryLog {
+  id                    String      @id @default(uuid())
+  verificationId        String
+  verification          VerificationAttempt @relation(fields: [verificationId], references: [id])
+  action                String      // VERIFICATION_STARTED, DRAFT_SAVED, DOCUMENT_REVIEWED, etc.
+  performedBy           String      // User ID
+  performedAt           DateTime    @default(now())
+  details               Json?       // Flexible details storage
+  
+  // Enhanced context
+  stepNumber            Int?        // Which wizard step
+  previousValue         Json?       // For audit trail
+  newValue              Json?       // For audit trail
+  
+  @@index([verificationId])
+  @@index([performedBy])
+  @@index([performedAt]) // For chronological ordering
+}
+
+// VerificationCertificate model
+model VerificationCertificate {
+  id                    String      @id @default(uuid())
+  verificationId        String      @unique
+  verification          VerificationAttempt @relation(fields: [verificationId], references: [id])
+  
+  // Certificate details
+  certificateNumber     String      @unique // Human-readable certificate number
+  issuedAt              DateTime    @default(now())
+  expiresAt             DateTime
+  documentPath          String      // Path in Supabase Storage
+  verificationHash      String      // Digital fingerprint for validation
+  qrCodeData            String?     // QR code validation data
+  
+  // Revocation support
+  isRevoked             Boolean     @default(false)
+  revokedAt             DateTime?
+  revokedReason         String?     @db.Text
+  revokedBy             String?     // User ID who revoked
+  
+  // Enhanced validation
+  validationUrl         String?     // Public validation URL
+  blockchainHash        String?     // Future blockchain integration
+  
+  @@index([verificationId])
+  @@index([certificateNumber])
+  @@index([issuedAt])
+}
+
+// Note model
+model Note {
+  id                    String      @id @default(uuid())
+  businessOwnerId       String
+  businessOwner         BusinessOwner @relation(fields: [businessOwnerId], references: [id])
+  createdBy             String      // User ID
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  // Enhanced note features
+  content               String      @db.Text
+  category              String?     // General, Verification, Document, etc.
+  tags                  String[]    // For filtering and organization
+  isPinned              Boolean     @default(false)
+  isPrivate             Boolean     @default(false) // PM-only notes
+  
+  // Rich content support
+  contentType           String      @default("text") // text, markdown, rich_text
+  attachments           String[]    // File references if needed
+  
+  // Relationships
+  author                User        @relation(fields: [createdBy], references: [id])
+  
+  @@index([businessOwnerId])
+  @@index([createdBy])
+  @@index([category])
+  @@index([isPinned, createdAt]) // For pinned notes display
+}
+
+// ActivityLog model
+model ActivityLog {
+  id                    String      @id @default(uuid())
+  businessOwnerId       String
+  businessOwner         BusinessOwner @relation(fields: [businessOwnerId], references: [id])
+  
+  // Activity details
+  entityType            String      // business_owner, document, verification, etc.
+  entityId              String?     // Reference to affected entity
+  action                String      // CREATE, UPDATE, DELETE, VERIFY, etc.
+  actionDescription     String      // Human-readable description
+  
+  // Actor information
+  performedBy           String      // User ID
+  performedByName       String?     // Cached for performance
+  performedByRole       String?     // Role at time of action
+  
+  // Change tracking
+  fieldChanges          Json?       // Detailed field-level changes
+  oldValues             Json?       // Previous values
+  newValues             Json?       // New values
+  
+  // Context
+  ipAddress             String?     // For security auditing
+  userAgent             String?     // Browser/client info
+  sessionId             String?     // Session tracking
+  
+  // Timestamps
+  performedAt           DateTime    @default(now())
+  
+  @@index([businessOwnerId])
+  @@index([performedBy])
+  @@index([entityType])
+  @@index([performedAt]) // For chronological display
+  @@index([businessOwnerId, performedAt]) // For History tab queries
+}
+
+// BusinessAssociation model (for Business Tab)
+model BusinessAssociation {
+  id                    String      @id @default(uuid())
+  ownerId               String
+  businessId            String
+  owner                 BusinessOwner @relation(fields: [ownerId], references: [id])
+  business              Business     @relation(fields: [businessId], references: [id])
+  
+  // Association details
+  role                  String      @default("OWNER") // Owner, Director, etc.
+  ownership             Float       @default(100) // Ownership percentage (0-100)
+  status                String      @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
+  verificationStatus    String      @default("PENDING") // PENDING, VERIFIED, REJECTED
+  notes                 String?     @db.Text
+  
+  // Additional information
+  isPrimaryContact      Boolean     @default(false)
+  startDate             DateTime    @default(now())
+  endDate               DateTime?   // For keeping historical records
+  
+  // Timestamps
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  @@unique([ownerId, businessId])
+  @@index([businessId])
+  @@index([ownerId])
+}
+
+// Business model (minimal for association)
+model Business {
+  id                    String      @id @default(uuid())
+  name                  String
+  dba                   String?     // Doing Business As
+  type                  String?     // Corporation, LLC, etc.
+  verificationStatus    String      @default("UNVERIFIED")
+  
+  // Relationships
+  owners                BusinessAssociation[]
+  
+  // Timestamps
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+} 

@@ -6,6 +6,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -13,22 +14,31 @@ export default function DashboardPage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userMetadata, setUserMetadata] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const user = useAuthStore((state) => state.user);
 
   // Get and display user data when component mounts
   useEffect(() => {
     const getUserData = async () => {
       try {
+        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUserEmail(user.email || null);
           setUserMetadata(user.user_metadata || {});
+          // Store user in global state
+          useAuthStore.getState().setUserSession(user, null);
         } else {
           // If no user is found, redirect to login
+          console.log('No user found, redirecting to login');
           router.push('/auth/login');
+          return;
         }
       } catch (error) {
         console.error('Error getting user data:', error);
+        // Don't redirect on error, let the middleware handle it
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -39,6 +49,8 @@ export default function DashboardPage() {
     setIsLoggingOut(true);
     try {
       await supabase.auth.signOut();
+      // Clear user from global state
+      useAuthStore.getState().clearUser();
       router.push('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -46,6 +58,18 @@ export default function DashboardPage() {
       setIsLoggingOut(false);
     }
   };
+
+  const navigateToBusinessOwners = () => {
+    router.push('/dashboard/business-owners');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <LoadingSkeleton type="ownerDetail" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -109,7 +133,7 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="card-glass">
+        <Card className="card-glass cursor-pointer hover:bg-gray-800/50 transition-colors" onClick={navigateToBusinessOwners}>
           <div className="p-6">
             <div className="mb-4 flex justify-center">
               <div className="bg-secondary/10 p-3 rounded-full">
